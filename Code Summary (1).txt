@@ -1,0 +1,3147 @@
+﻿###############################################################################
+remove(list=ls()) 
+#------------------------------------------------------
+# Association Rule for combination data set 
+#------------------------------------------------------
+install.packages("Matrix")
+install.packages("arules")
+WonLikelihood <-  read.csv(file.choose(), header=TRUE, sep=",")
+library("Matrix")
+library("arules")
+subset<- c("BidStatus", "BusinessUnit", "RestrictionStatus", "LandownerType", "Supervisor", "Logability", "GutchessScaleRules", "CertificationType", "Forester")
+bid.arule<- WonLikelihood [subset]
+#----------------------------------------------------------------------------------------------------
+# find association rules with default settings (Support: both A and B, doesn't matter the direction [redundant rules]; 
+#                                               Confidence: shows how confident the algorithm is in regards to this association;
+#                                               Lift: is a measure of performance of a targey model at classifying or predicting the cases.it is a ratio)
+rules=apriori(bid.arule)
+inspect(rules)
+#---------------------------------------------------------------------------------------------------
+# rules with rhs containing "BidStatus" only
+rules<- apriori (bid.arule, parameter = list(minlen=2, supp=0.005, conf=0.8), 
+                 appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                 default="lhs"),
+                 control = list(verbose=F))
+
+
+rules.sorted<- sort(rules, by="lift")
+inspect(rules.sorted)
+#create a dataframe:
+df=data.frame(
+lhs = labels(lhs(rules)),
+rhs = labels(rhs(rules)),
+rules@quality)
+#----------------------------------------------------------------------------------
+#rules with rhs containing "WON" only 
+rules.won<- apriori (bid.arule, parameter = list(minlen=2, supp=0.005, conf=0.8), 
+                 appearance = list(rhs=c("BidStatus=WON"),
+                                   default="lhs"),
+                 control = list(verbose=F))
+
+
+ruleswon.sorted<- sort(rules.won, by="lift")
+inspect(ruleswon.sorted)
+
+
+ruleswon.pruned <- ruleswon.sorted[!is.redundant(ruleswon.sorted)]
+arules::inspect(ruleswon.sorted)
+afterremoving.won=data.frame(
+  lhs = labels(lhs(ruleswon.pruned)),
+  rhs = labels(rhs(ruleswon.pruned)),
+  ruleswon.pruned@quality)
+#-----------------------------------------------------------------------------------
+#rules with rhs containing "LOST" only 
+rules.lost<- apriori (bid.arule, parameter = list(minlen=2, supp=0.005, conf=0.8), 
+                 appearance = list(rhs=c( "BidStatus=LOST"),
+                                   default="lhs"),
+                 control = list(verbose=F))
+
+
+ruleslost.sorted<- sort(rules.lost, by="lift")
+inspect(ruleslost.sorted)
+
+
+ruleslost.pruned <- ruleslost.sorted[!is.redundant(ruleslost.sorted)]
+arules::inspect(ruleslost.sorted)
+afterremoving.lost=data.frame(
+  lhs = labels(lhs(ruleslost.pruned)),
+  rhs = labels(rhs(ruleslost.pruned)),
+  ruleslost.pruned@quality)
+#---------------------------------------------------------------------------------------------------
+# Pruning Redundant Rules
+# when a rule is a super rule of another rule, the former rule is considered to be redundant.
+# find redundant rules
+subset.matrix <- is.subset (rules.sorted, rules.sorted)
+subset.matrix[lower.tri(subset.matrix, diag=T)] <- NA
+redundant <- colSums(subset.matrix, na.rm=T)>= 1
+which(redundant)
+# remove redundant rules
+rules.pruned <- rules.sorted[!redundant]
+inspect (rules.pruned)        
+rules.pruned <- rules[!is.redundant(rules.sorted)]
+arules::inspect(rules.pruned)
+afterremoving=data.frame(
+lhs = labels(lhs(rules.pruned)),
+rhs = labels(rhs(rules.pruned)),
+rules.pruned@quality)
+#-----------------------------------------------------------------------------------------------------
+# Visualizing Association Rules
+# Package arulesViz supports visualization of association rules with scatter plot, ballon plot, graph, parall
+install.packages(arules, scatterplot3d, vcd, seriation, igraph, "grid", "cluster", "TSP", "gclus", "colorspace")
+install.packages("arulesViz")
+library(arulesViz)
+plot(rules)
+plot(rules.pruned)
+# check normality assumption
+ourprice<- WonLikelihood[c("OurPrice")]
+qqnorm(ourprice)
+qqnorm(WonLikelihood["winter"], main="QQ plot for Gutchess price")
+qqline(WonLikelihood["winter"])
+x<- rnorm(100)
+qqnorm(x)
+#---------------------------------------------------------------------------------------------
+rules1<- apriori (bid.arule, parameter = list(minlen=2, supp=0.005, conf=0.8, maxlen=2), 
+                 appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                   default="lhs"),
+                 control = list(verbose=F))
+rules.sorted1<- sort(rules1, by="lift")
+inspect(rules.sorted1)
+#---------------------------------------------------------------------------------------------
+rules2<- apriori (bid.arule, parameter = list(minlen=3, supp=0.005, conf=0.8, maxlen=3), 
+                 appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                   default="lhs"),
+                 control = list(verbose=F))
+
+
+rules.sorted2<- sort(rules2, by="lift")
+inspect(rules.sorted2)
+#---------------------------------------------------------------------------------------------
+rules3<- apriori (bid.arule, parameter = list(minlen=4, supp=0.005, conf=0.8, maxlen=4), 
+                  appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                    default="lhs"),
+                  control = list(verbose=F))
+
+
+rules.sorted3<- sort(rules3, by="lift")
+inspect(rules.sorted3)
+#---------------------------------------------------------------------------------------------
+rules4<- apriori (bid.arule, parameter = list(minlen=5, supp=0.005, conf=0.8, maxlen=5), 
+                  appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                    default="lhs"),
+                  control = list(verbose=F))
+
+
+rules.sorted4<- sort(rules4, by="lift")
+inspect(rules.sorted4)
+#---------------------------------------------------------------------------------------------
+rules5<- apriori (bid.arule, parameter = list(minlen=6, supp=0.005, conf=0.8, maxlen=6), 
+                  appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                    default="lhs"),
+                  control = list(verbose=F))
+
+
+rules.sorted5<- sort(rules5, by="lift")
+inspect(rules.sorted5)
+#--------------------------------------------------------------------------------------------
+rules6<- apriori (bid.arule, parameter = list(minlen=7, supp=0.005, conf=0.8, maxlen=7), 
+                  appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                    default="lhs"),
+                  control = list(verbose=F))
+
+
+rules.sorted6<- sort(rules6, by="lift")
+inspect(rules.sorted6)
+#--------------------------------------------------------------------------------------------
+rules7<- apriori (bid.arule, parameter = list(minlen=8, supp=0.005, conf=0.8, maxlen=8), 
+                  appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                    default="lhs"),
+                  control = list(verbose=F))
+
+
+rules.sorted7<- sort(rules7, by="lift")
+inspect(rules.sorted7)
+#--------------------------------------------------------------------------------------------
+rules8<- apriori (bid.arule, parameter = list(minlen=9, supp=0.005, conf=0.8, maxlen=9), 
+                  appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                    default="lhs"),
+                  control = list(verbose=F))
+
+
+rules.sorted8<- sort(rules8, by="lift")
+inspect(rules.sorted8)
+#--------------------------------------------------------------------------------------------
+rules9<- apriori (bid.arule, parameter = list(minlen=10, supp=0.005, conf=0.8, maxlen=10), 
+                  appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                    default="lhs"),
+                  control = list(verbose=F))
+
+
+rules.sorted9<- sort(rules9, by="lift")
+inspect(rules.sorted9)
+#--------------------------------------------------------------------------------------------
+rules10<- apriori (bid.arule, parameter = list(minlen=11, supp=0.005, conf=0.8, maxlen=11), 
+                  appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                    default="lhs"),
+                  control = list(verbose=F))
+
+
+rules.sorted10<- sort(rules10, by="lift")
+inspect(rules.sorted10)
+#--------------------------------------------------------------------------------------------
+rules11<- apriori (bid.arule, parameter = list(minlen=12, supp=0.005, conf=0.8, maxlen=12), 
+                   appearance = list(rhs=c("BidStatus=WON", "BidStatus=LOST"),
+                                     default="lhs"),
+                   control = list(verbose=F))
+
+
+rules.sorted11<- sort(rules11, by="lift")
+inspect(rules.sorted11)
+#--------------------------------------------------------------------------------------------
+#########################################################################################
+###########treatment including medical mental physical, age including young mid old
+####one-way ANOVA
+#medical includes in x1
+anova(lm(stressreduction~gender, datamedical))
+anova(lm(stressreduction~gender, datamental))
+anova(lm(stressreduction~gender, dataphysical))
+####two-way ANOVA
+anova(lm(stressreduction~treatment*age, dataTwoWayComparisons))
+anova(lm(stressreduction~treatment*gender, dataTwoWayInteraction))
+####pairwise comparison
+pairwise.t.test(dataTwoWayComparisons$y, dataTwoWayComparisons$treatment,p.adj="none")
+#### anova using type 3 sums of squares
+anova(lm(math~instruction*enviroment, datatwoway3,constrasts=list(instruction=contr.sum,enviroment=contr.sum)),type="3")
+##or
+options(constrasts=c("contr.sum","contr.poly"))
+model<-lm(math~instruction*enviroment. datawoway3)
+drop1(model, .~., test="F")
+
+
+####logistic model
+titanic.logit<-glm(survived~pclass+sex+age+sibsp+parch, family="binomial",data=titanic)
+summary(tiotanic.logit)
+##odds ratios
+exp(coef(titanic.logit))
+##odds ratios and 95% CI
+exp(cbind(OR=coef(titanic.logit), confint(titanic.logit)))
+##wald test
+wald.test(b=coef(titanic.logit),Sigma=vcov(titanic.logit),terms=2:6)
+## chi=squared test
+anova(titanic.logit, test="Chisq")
+##pearson's chi-squared test
+chisq.test(data)
+
+
+
+
+#### multiple linear regression
+cor(data)
+library(ISwR)
+cyst.lm<- lm(pemax~age+sex+height+weight+bmp+fev1+rv+frc+tlc,data=cystfibr)
+summary(cyst.lm)
+anova(cyst.lm)
+plot(fitted(cyst.lm),rstandard(cyst.lm), main="Cystic Fibrosis Residual Plot", +xlab="Fitted Values", ylab="residual Values")
+abline(0,0)
+##stepwise regression 
+cyst.step.d<-step(cyst.lm) #defailt is backward
+cyst.step.s<-step(cyst.lm, deriction="both")
+##backward regression
+cyst.step.b<-step(cyst.lm, deriction="backward")
+summary(cyst.step.b)
+cyst.step.b$anova
+anova(cyst.step.b)
+
+
+####principal component regression newfat is the dataset
+newfat.cor<-cor(newfat)
+newfat.pcr<- eigen(newfat.cor)
+newfat.pcr
+##or
+prcomp(newfat, scale. = T)
+
+
+####power analysis
+power.t.test(delta=1, sd=1, sig.level=0.05, power=0.9)
+
+
+
+
+#----------------------------------
+#####importing data
+#----------------------------------
+
+
+mydata<-read.table("c:/mydata.csv", header=TRUE, sep=",", row.names = "id")
+# read in the first worksheet from the workbook myexcel.xlsx
+# first row contains variable names
+library(xlsx)
+mydata <- read.xlsx("c:/myexcel.xlsx", 1)
+# read in the worksheet named mysheet
+mydata <- read.xlsx("c:/myexcel.xlsx", sheetName = "mysheet")
+
+
+#####missing values
+# list rows of data that have missing values 
+mydata[!complete.cases(mydata),]
+# create new dataset without missing data 
+newdata <- na.omit(mydata) 
+
+
+#-----------------------------------------------
+##### descriptive statisitcs
+#-----------------------------------------------
+
+
+# get means for variables in data frame mydata
+# excluding missing values 
+sapply(mydata, mean, na.rm=TRUE)
+#mean,median,25th and 75th quartiles,min,max
+summary(mydata)
+# Tukey min,lower-hinge, median,upper-hinge,max
+fivenum(x)
+#Summary Statistics by Group
+library(psych)
+describe.by(mydata, group,...)
+
+
+#------------------------------------------
+#####correlaitons
+#------------------------------------------
+
+
+# Correlations/covariances among numeric variables in 
+# data frame mtcars. Use listwise deletion of missing data. 
+cor(mtcars, use="complete.obs", method="kendall") 
+cov(mtcars, use="complete.obs") 
+# Correlations with significance levels
+library(Hmisc)
+rcorr(x, type="pearson") # type can be pearson or spearman
+#mtcars is a data frame 
+rcorr(as.matrix(mtcars)) 
+
+
+#-----------------------------------------
+##### t test
+#-----------------------------------------
+
+
+# independent 2-group t-test
+t.test(y~x) # where y is numeric and x is a binary factor 
+# independent 2-group t-test
+t.test(y1,y2) # where y1 and y2 are numeric 
+# paired t-test
+t.test(y1,y2,paired=TRUE) # where y1 & y2 are numeric 
+# one sample t-test
+t.test(y,mu=3) # Ho: mu=3 
+
+
+#-------------------------------------
+#####multiple linear regression
+#-------------------------------------
+
+
+fit <- lm(y ~ x1 + x2 + x3, data=mydata)
+summary(fit) # show results
+# Other useful functions 
+coefficients(fit) # model coefficients
+confint(fit, level=0.95) # CIs for model parameters 
+fitted(fit) # predicted values
+residuals(fit) # residuals
+anova(fit) # anova table 
+vcov(fit) # covariance matrix for model parameters 
+influence(fit) # regression diagnostics 
+# diagnostic plots 
+layout(matrix(c(1,2,3,4),2,2)) # optional 4 graphs/page 
+plot(fit)
+# compare models
+fit1 <- lm(y ~ x1 + x2 + x3 + x4, data=mydata)
+fit2 <- lm(y ~ x1 + x2)
+anova(fit1, fit2) 
+# Stepwise Regression
+library(MASS)
+fit <- lm(y~x1+x2+x3,data=mydata)
+step <- stepAIC(fit, direction="both")
+step$anova # display results 
+# All Subsets Regression
+library(leaps)
+attach(mydata)
+leaps<-regsubsets(y~x1+x2+x3+x4,data=mydata,nbest=10)
+# view results 
+summary(leaps)
+# plot a table of models showing variables in each model.
+# models are ordered by the selection statistic.
+plot(leaps,scale="r2")
+# plot statistic by subset size 
+library(car)
+subsets(leaps, statistic="rsq") 
+
+
+#-------------------------------------
+#####regression diagnostics
+#-------------------------------------
+
+
+# Assessing Outliers
+outlierTest(fit) # Bonferonni p-value for most extreme obs
+qqPlot(fit, main="QQ Plot") #qq plot for studentized resid 
+leveragePlots(fit) # leverage plots
+# Influential Observations
+# added variable plots 
+av.Plots(fit)
+# Cook's D plot
+# identify D values > 4/(n-k-1) 
+cutoff <- 4/((nrow(mtcars)-length(fit$coefficients)-2)) 
+plot(fit, which=4, cook.levels=cutoff)
+# Influence Plot 
+influencePlot(fit, id.method="identify", main="Influence Plot", sub="Circle size is proportial to Cook's Distance" )
+# Normality of Residuals
+# qq plot for studentized resid
+qqPlot(fit, main="QQ Plot")
+# distribution of studentized residuals
+library(MASS)
+sresid <- studres(fit) 
+hist(sresid, freq=FALSE, 
+     main="Distribution of Studentized Residuals")
+xfit<-seq(min(sresid),max(sresid),length=40) 
+yfit<-dnorm(xfit) 
+lines(xfit, yfit) 
+# Evaluate homoscedasticity
+# non-constant error variance test
+ncvTest(fit)
+# plot studentized residuals vs. fitted values 
+spreadLevelPlot(fit)
+# Evaluate Collinearity
+vif(fit) # variance inflation factors 
+sqrt(vif(fit)) > 2 # problem?
+# Evaluate Nonlinearity
+# component + residual plot 
+crPlots(fit)
+# Ceres plots 
+ceresPlots(fit)
+# Test for Autocorrelated Errors
+durbinWatsonTest(fit)
+
+
+#------------------------------------
+#####ANOVA
+#------------------------------------
+
+
+# One Way Anova (Completely Randomized Design)
+fit <- aov(y ~ A, data=mydataframe) 
+# Randomized Block Design (B is the blocking factor) 
+fit <- aov(y ~ A + B, data=mydataframe) 
+# Two Way Factorial Design 
+fit <- aov(y ~ A + B + A:B, data=mydataframe)
+fit <- aov(y ~ A*B, data=mydataframe) # same thing 
+# Analysis of Covariance 
+fit <- aov(y ~ A + x, data=mydataframe) 
+# One Within Factor
+fit <- aov(y~A+Error(Subject/A),data=mydataframe)
+# Two Within Factors W1 W2, Two Between Factors B1 B2 
+fit <- aov(y~(W1*W2*B1*B2)+Error(Subject/(W1*W2))+(B1*B2),
+           data=mydataframe) 
+layout(matrix(c(1,2,3,4),2,2)) # optional layout 
+plot(fit) # diagnostic plots
+summary(fit) # display Type I ANOVA table
+drop1(fit,~.,test="F") # type III SS and F Tests 
+#------------------------------------
+#####MANOVA
+#------------------------------------
+
+
+# 2x2 Factorial MANOVA with 3 Dependent Variables. 
+Y <- cbind(y1,y2,y3)
+fit <- manova(Y ~ A*B)
+summary(fit, test="Pillai")
+# Detect Outliers in the MTCARS Data
+library(mvoutlier)
+outliers <- 
+  aq.plot(mtcars[c("mpg","disp","hp","drat","wt","qsec")])
+outliers # show list of outliers 
+# Q-Q Plot for variable MPG 
+attach(mtcars)
+qqnorm(mpg)
+qqline(mpg)
+# Test Multivariate Normality 
+mshapiro.test(M)
+# Graphical Assessment of Multivariate Normality
+x <- as.matrix(mydata) # n x p numeric matrix
+center <- colMeans(x) # centroid
+n <- nrow(x); p <- ncol(x); cov <- cov(x); 
+d <- mahalanobis(x,center,cov) # distances 
+qqplot(qchisq(ppoints(n),df=p),d,
+       main="QQ Plot Assessing Multivariate Normality",
+       ylab="Mahalanobis D2")
+abline(a=0,b=1) 
+# Bartlett Test of Homogeneity of Variances
+bartlett.test(y~G, data=mydata)
+# Figner-Killeen Test of Homogeneity of Variances
+fligner.test(y~G, data=mydata)
+# Homogeneity of Variance Plot
+library(HH)
+hov(y~G, data=mydata)
+hovPlot(y~G,data=mydata)
+
+
+#----------------------------------------------
+##### generalized linear models
+#----------------------------------------------
+
+
+# Logistic Regression
+# where F is a binary factor and 
+# x1-x3 are continuous predictors 
+fit <- glm(F~x1+x2+x3,data=mydata,family=binomial())
+summary(fit) # display results
+confint(fit) # 95% CI for the coefficients
+exp(coef(fit)) # exponentiated coefficients
+exp(confint(fit)) # 95% CI for exponentiated coefficients
+predict(fit, type="response") # predicted values
+residuals(fit, type="deviance") # residuals
+
+
+# Poisson Regression
+# where count is a count and 
+# x1-x3 are continuous predictors 
+fit <- glm(count ~ x1+x2+x3, data=mydata, family=poisson())
+summary(fit) #display results 
+
+
+# survival analysis
+# Mayo Clinic Lung Cancer Data
+library(survival)
+# learn about the dataset
+help(lung)
+# create a Surv object 
+survobj <- with(lung, Surv(time,status))
+# Plot survival distribution of the total sample
+# Kaplan-Meier estimator 
+fit0 <- survfit(survobj~1, data=lung)
+summary(fit0)
+plot(fit0, xlab="Survival Time in Days", 
+     ylab="% Surviving", yscale=100,
+     main="Survival Distribution (Overall)") 
+# Compare the survival distributions of men and women 
+fit1 <- survfit(survobj~sex,data=lung)
+# plot the survival distributions by sex 
+plot(fit1, xlab="Survival Time in Days", 
+     ylab="% Surviving", yscale=100, col=c("red","blue"),
+     main="Survival Distributions by Gender") 
+legend("topright", title="Gender", c("Male", "Female"),
+       fill=c("red", "blue"))
+# test for difference between male and female 
+# survival curves (logrank test) 
+survdiff(survobj~sex, data=lung) 
+# predict male survival from age and medical scores 
+MaleMod <- coxph(survobj~age+ph.ecog+ph.karno+pat.karno,
+                 data=lung, subset=sex==1)
+# display results 
+MaleMod
+# evaluate the proportional hazards assumption 
+cox.zph(MaleMod) 
+
+
+#------------------------------------------
+##### discriminant function analysis
+#------------------------------------------
+
+
+# Linear Discriminant Analysis with Jacknifed Prediction 
+library(MASS)
+fit <- lda(G ~ x1 + x2 + x3, data=mydata, 
+           na.action="na.omit", CV=TRUE)
+fit # show results 
+# Assess the accuracy of the prediction
+# percent correct for each category of G
+ct <- table(mydata$G, fit$class)
+diag(prop.table(ct, 1))
+# total percent correct
+sum(diag(prop.table(ct)))
+# Quadratic Discriminant Analysis with 3 groups applying 
+# resubstitution prediction and equal prior probabilities. 
+library(MASS)
+fit <- qda(G ~ x1 + x2 + x3 + x4, data=na.omit(mydata),
+           prior=c(1,1,1)/3)
+
+
+# Scatter plot using the 1st two discriminant dimensions 
+plot(fit) # fit from lda
+# Panels of histograms and overlayed density plots
+# for 1st discriminant function
+plot(fit, dimen=1, type="both") # fit from lda 
+# Exploratory Graph for LDA or QDA
+library(klaR)
+partimat(G~x1+x2+x3,data=mydata,method="lda") 
+# Scatterplot for 3 Group Problem 
+pairs(mydata[c("x1","x2","x3")], main="My Title ", pch=22, 
+      bg=c("red", "yellow", "blue")[unclass(mydata$G)]) 
+
+
+#-----------------------------------------------
+##### time series and forecasting
+#-----------------------------------------------
+# save a numeric vector containing 72 monthly observations
+# from Jan 2009 to Dec 2014 as a time series object
+myts <- ts(myvector, start=c(2009, 1), end=c(2014, 12), frequency=12) 
+# subset the time series (June 2014 to December 2014)
+myts2 <- window(myts, start=c(2014, 6), end=c(2014, 12)) 
+# plot series
+plot(myts)
+# Seasonal decomposition
+fit <- stl(myts, s.window="period")
+plot(fit)
+# additional plots
+monthplot(myts)
+library(forecast)
+seasonplot(myts) 
+# simple exponential - models level
+fit <- HoltWinters(myts, beta=FALSE, gamma=FALSE)
+# double exponential - models level and trend
+fit <- HoltWinters(myts, gamma=FALSE)
+# triple exponential - models level, trend, and seasonal components
+fit <- HoltWinters(myts)
+# predictive accuracy
+library(forecast)
+accuracy(fit)
+# predict next three future values
+library(forecast)
+forecast(fit, 3)
+plot(forecast(fit, 3)) 
+# fit an ARIMA model of order P, D, Q
+fit <- arima(myts, order=c(p, d, q))             
+# predictive accuracy
+library(forecast)
+accuracy(fit)
+# predict next 5 observations
+library(forecast)
+forecast(fit, 5)
+plot(forecast(fit, 5)) 
+library(forecast)
+# Automated forecasting using an exponential model
+fit <- ets(myts)
+# Automated forecasting using an ARIMA model
+fit <- auto.arima(myts) 
+#------------------------------------------------------
+#####Principal Components and Factor Analysis 
+#------------------------------------------------------
+
+
+# Pricipal Components Analysis
+# entering raw data and extracting PCs 
+# from the correlation matrix 
+fit <- princomp(mydata, cor=TRUE)
+summary(fit) # print variance accounted for 
+loadings(fit) # pc loadings 
+plot(fit,type="lines") # scree plot 
+fit$scores # the principal components
+biplot(fit) 
+
+
+# Varimax Rotated Principal Components
+# retaining 5 components 
+library(psych)
+fit <- principal(mydata, nfactors=5, rotate="varimax")
+fit # print results 
+
+
+# Maximum Likelihood Factor Analysis
+# entering raw data and extracting 3 factors, 
+# with varimax rotation 
+fit <- factanal(mydata, 3, rotation="varimax")
+print(fit, digits=2, cutoff=.3, sort=TRUE)
+# plot factor 1 by factor 2 
+load <- fit$loadings[,1:2] 
+plot(load,type="n") # set up plot 
+text(load,labels=names(mydata),cex=.7) # add variable names 
+
+
+# Principal Axis Factor Analysis
+library(psych)
+fit <- factor.pa(mydata, nfactors=3, rotation="varimax")
+fit # print results 
+
+
+# Determine Number of Factors to Extract
+library(nFactors)
+ev <- eigen(cor(mydata)) # get eigenvalues
+ap <- parallel(subject=nrow(mydata),var=ncol(mydata),
+               rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS) 
+
+
+#--------------------------------------
+##### graph
+#--------------------------------------
+
+
+# Creating a Graph
+attach(mtcars)
+plot(wt, mpg) 
+abline(lm(mpg~wt))
+title("Regression of MPG on Weight")
+
+
+# Simple Histogram
+hist(mtcars$mpg)
+
+
+# Colored Histogram with Different Number of Bins
+hist(mtcars$mpg, breaks=12, col="red") 
+
+
+# Add a Normal Curve (Thanks to Peter Dalgaard)
+x <- mtcars$mpg 
+h<-hist(x, breaks=10, col="red", xlab="Miles Per Gallon", 
+        main="Histogram with Normal Curve") 
+xfit<-seq(min(x),max(x),length=40) 
+yfit<-dnorm(xfit,mean=mean(x),sd=sd(x)) 
+yfit <- yfit*diff(h$mids[1:2])*length(x) 
+lines(xfit, yfit, col="blue", lwd=2) 
+
+
+# Kernel Density Plot
+d <- density(mtcars$mpg) # returns the density data 
+plot(d) # plots the results 
+
+
+# Filled Density Plot
+d <- density(mtcars$mpg)
+plot(d, main="Kernel Density of Miles Per Gallon")
+polygon(d, col="red", border="blue") 
+
+
+#Compare MPG distributions for cars with 
+# 4,6, or 8 cylinders
+library(sm)
+attach(mtcars)
+
+
+# create value labels 
+cyl.f <- factor(cyl, levels= c(4,6,8),
+                labels = c("4 cylinder", "6 cylinder", "8 cylinder")) 
+
+
+# plot densities 
+sm.density.compare(mpg, cyl, xlab="Miles Per Gallon")
+title(main="MPG Distribution by Car Cylinders")
+
+
+# add legend via mouse click
+colfill<-c(2:(2+length(levels(cyl.f)))) 
+legend(locator(1), levels(cyl.f), fill=colfill) 
+
+
+
+
+# Simple Dotplot
+dotchart(mtcars$mpg,labels=row.names(mtcars),cex=.7,
+         main="Gas Milage for Car Models", 
+         xlab="Miles Per Gallon")
+
+
+# Dotplot: Grouped Sorted and Colored
+# Sort by mpg, group and color by cylinder 
+x <- mtcars[order(mtcars$mpg),] # sort by mpg
+x$cyl <- factor(x$cyl) # it must be a factor
+x$color[x$cyl==4] <- "red"
+x$color[x$cyl==6] <- "blue"
+x$color[x$cyl==8] <- "darkgreen" 
+dotchart(x$mpg,labels=row.names(x),cex=.7,groups= x$cyl,
+         main="Gas Milage for Car Models\ngrouped by cylinder",
+         xlab="Miles Per Gallon", gcolor="black", color=x$color) 
+
+
+# Simple Bar Plot 
+counts <- table(mtcars$gear)
+barplot(counts, main="Car Distribution", 
+        xlab="Number of Gears") 
+
+
+# Simple Horizontal Bar Plot with Added Labels 
+counts <- table(mtcars$gear)
+barplot(counts, main="Car Distribution", horiz=TRUE,
+        names.arg=c("3 Gears", "4 Gears", "5 Gears"))
+
+
+# Stacked Bar Plot with Colors and Legend
+counts <- table(mtcars$vs, mtcars$gear)
+barplot(counts, main="Car Distribution by Gears and VS",
+        xlab="Number of Gears", col=c("darkblue","red"),
+        legend = rownames(counts)) 
+
+
+# Grouped Bar Plot
+counts <- table(mtcars$vs, mtcars$gear)
+barplot(counts, main="Car Distribution by Gears and VS",
+        xlab="Number of Gears", col=c("darkblue","red"),
+        legend = rownames(counts), beside=TRUE)
+
+
+
+
+# Fitting Labels 
+par(las=2) # make label text perpendicular to axis
+par(mar=c(5,8,4,2)) # increase y-axis margin.
+
+
+counts <- table(mtcars$gear)
+barplot(counts, main="Car Distribution", horiz=TRUE, names.arg=c("3 Gears", "4 Gears", "5   Gears"), cex.names=0.8)
+
+
+# Create Line Chart
+
+
+# convert factor to numeric for convenience 
+Orange$Tree <- as.numeric(Orange$Tree) 
+ntrees <- max(Orange$Tree)
+
+
+# get the range for the x and y axis 
+xrange <- range(Orange$age) 
+yrange <- range(Orange$circumference) 
+
+
+# set up the plot 
+plot(xrange, yrange, type="n", xlab="Age (days)",
+     ylab="Circumference (mm)" ) 
+colors <- rainbow(ntrees) 
+linetype <- c(1:ntrees) 
+plotchar <- seq(18,18+ntrees,1)
+
+
+# add lines 
+for (i in 1:ntrees) { 
+  tree <- subset(Orange, Tree==i) 
+  lines(tree$age, tree$circumference, type="b", lwd=1.5,
+        lty=linetype[i], col=colors[i], pch=plotchar[i]) 
+} 
+
+
+# add a title and subtitle 
+title("Tree Growth", "example of line plot")
+
+
+# add a legend 
+legend(xrange[1], yrange[2], 1:ntrees, cex=0.8, col=colors,
+       pch=plotchar, lty=linetype, title="Tree")
+
+
+# Simple Pie Chart
+slices <- c(10, 12,4, 16, 8)
+lbls <- c("US", "UK", "Australia", "Germany", "France")
+pie(slices, labels = lbls, main="Pie Chart of Countries")
+
+
+# Pie Chart with Percentages
+slices <- c(10, 12, 4, 16, 8) 
+lbls <- c("US", "UK", "Australia", "Germany", "France")
+pct <- round(slices/sum(slices)*100)
+lbls <- paste(lbls, pct) # add percents to labels 
+lbls <- paste(lbls,"%",sep="") # ad % to labels 
+pie(slices,labels = lbls, col=rainbow(length(lbls)),
+    main="Pie Chart of Countries") 
+
+
+# Boxplot of MPG by Car Cylinders 
+boxplot(mpg~cyl,data=mtcars, main="Car Milage Data", 
+        xlab="Number of Cylinders", ylab="Miles Per Gallon") 
+
+
+# Simple Scatterplot
+attach(mtcars)
+plot(wt, mpg, main="Scatterplot Example", 
+     xlab="Car Weight ", ylab="Miles Per Gallon ", pch=19) 
+
+
+# Add fit lines
+abline(lm(mpg~wt), col="red") # regression line (y~x) 
+lines(lowess(wt,mpg), col="blue") # lowess line (x,y) 
+
+
+# Enhanced Scatterplot of MPG vs. Weight 
+# by Number of Car Cylinders 
+library(car) 
+scatterplot(mpg ~ wt | cyl, data=mtcars, 
+            xlab="Weight of Car", ylab="Miles Per Gallon", 
+            main="Enhanced Scatter Plot", 
+            labels=row.names(mtcars)) 
+
+
+# Basic Scatterplot Matrix
+pairs(~mpg+disp+drat+wt,data=mtcars, 
+      main="Simple Scatterplot Matrix")
+
+
+# Scatterplot Matrices from the lattice Package 
+library(lattice)
+splom(mtcars[c(1,3,5,6)], groups=cyl, data=mtcars,
+      panel=panel.superpose, 
+      key=list(title="Three Cylinder Options",
+               columns=3,
+               points=list(pch=super.sym$pch[1:3],
+                           col=super.sym$col[1:3]),
+               text=list(c("4 Cylinder","6 Cylinder","8 Cylinder")))) 
+
+
+# Scatterplot Matrices from the car Package
+library(car)
+scatterplot.matrix(~mpg+disp+drat+wt|cyl, data=mtcars,
+                   main="Three Cylinder Options")
+
+
+# Scatterplot Matrices from the glus Package 
+library(gclus)
+dta <- mtcars[c(1,3,5,6)] # get data 
+dta.r <- abs(cor(dta)) # get correlations
+dta.col <- dmat.color(dta.r) # get colors
+# reorder variables so those with highest correlation
+# are closest to the diagonal
+dta.o <- order.single(dta.r) 
+cpairs(dta, dta.o, panel.colors=dta.col, gap=.5,
+       main="Variables Ordered and Colored by Correlation" ) 
+
+
+# High Density Scatterplot with Binning
+library(hexbin)
+x <- rnorm(1000)
+y <- rnorm(1000)
+bin<-hexbin(x, y, xbins=50) 
+plot(bin, main="Hexagonal Binning") 
+
+
+# High Density Scatterplot with Color Transparency 
+pdf("c:/scatterplot.pdf") 
+x <- rnorm(1000)
+y <- rnorm(1000) 
+plot(x,y, main="PDF Scatterplot Example", col=rgb(0,100,0,50,maxColorValue=255), pch=16)
+dev.off()
+
+
+# 3D Scatterplot
+library(scatterplot3d)
+attach(mtcars)
+scatterplot3d(wt,disp,mpg, main="3D Scatterplot")
+
+
+# 3D Scatterplot with Coloring and Vertical Drop Lines
+library(scatterplot3d) 
+attach(mtcars) 
+scatterplot3d(wt,disp,mpg, pch=16, highlight.3d=TRUE,
+              type="h", main="3D Scatterplot") 
+
+
+# 3D Scatterplot with Coloring and Vertical Lines
+# and Regression Plane 
+library(scatterplot3d) 
+attach(mtcars) 
+s3d <-scatterplot3d(wt,disp,mpg, pch=16, highlight.3d=TRUE,
+                    type="h", main="3D Scatterplot")
+fit <- lm(mpg ~ wt+disp) 
+s3d$plane3d(fit)
+
+
+#------------------------------------------------------------------------------------------------------------
+#clean the data
+#------------------------------------------------------------------------------------------------------------
+
+
+library("readxl")
+
+
+#mydata <- read_excel("~/Desktop/hw5.xlsx", col_types = c("date", "text", "date", "skip", "list", "list", "list"))
+
+
+mydata <- read_excel(file.choose(), col_types = c("date", "text", "date", "skip", "list", "list", "list"))
+
+
+
+
+# ---------------------------------------------
+
+
+# Change Duration to seconds time 
+
+
+# ---------------------------------------------
+
+
+whichDurDate <- substr(mydata$Duration, 1,3) == "-22"
+
+
+mydata$Duration[whichDurDate] <- 3*60+39 + (as.numeric(unlist(mydata$Duration[whichDurDate]))+2209062060 ) / 60
+
+
+
+
+whichHasColon <- grep(":", mydata$Duration)
+
+
+whereColon <- regexpr(":", mydata$Duration[whichHasColon])
+
+
+whichHasSemi <- grep(";", mydata$Duration)
+
+
+whereSemi <- regexpr(";", mydata$Duration[whichHasColon])
+
+
+mydata$Duration[whichHasColon] <- as.numeric(substr(mydata$Duration[whichHasColon], whereColon-1, whereColon-1)) * 60 + as.numeric(substr(mydata$Duration[whichHasColon], whereColon+1, whereColon+2))
+
+
+mydata$Duration[whichHasSemi] <- as.numeric(substr(mydata$Duration[whichHasSemi], whereSemi-1, whereSemi-1)) * 60 + as.numeric(substr(mydata$Duration[whichHasSemi], whereSemi+1, whereSemi+2))
+
+
+mydata$Duration <- as.numeric(unlist(mydata$Duration))
+
+
+# ---------------------------------------------
+
+
+# Change Interval to seconds time 
+
+
+# ---------------------------------------------
+whichIntDate <- substr(mydata$Interval, 1,3) == "-22"
+mydata$Interval[whichIntDate] <- 3*60+39 + (as.numeric(unlist(mydata$Interval[whichIntDate]))+2209062060 ) / 60
+mydata$Interval <- as.numeric(unlist(mydata$Interval))
+# ---------------------------------------------
+# Change Height, since heights are messy
+# ---------------------------------------------
+isHeightNum <- unlist(gregexpr('\\(?[0-9]+', mydata$Height)) > 0
+
+
+mydata$Height[isHeightNum] <- unlist(regmatches(unlist(mydata$Height), gregexpr('\\(?[0-9]+', mydata$Height)))
+
+
+mydata$Height <- as.numeric(unlist(mydata$Height))
+#----------------------------------------
+
+
+# repeated measure
+
+
+#--------------------------------------
+
+
+install.packages("Matrix")
+library("Matrix")
+install.packages("arules")
+library("arule") 
+rules=apriori(data)
+inspect(rules)
+
+
+#-------------------------------------
+
+
+# read csv files
+
+
+#-------------------------------------
+data<-read.csv("datasets/data.csv", header = TRUE)
+##############################################################################################
+#------------------------------------------------
+
+
+# Chi-square test
+
+
+#------------------------------------------------
+install.packages("Hmisc")
+
+
+chi.subset<- WonLikelihood[c("BidStatus", "BusinessUnit", "restriction.status", "Landowner.Type", "Supervisor", "Logability", "Scale.Rules", "Source.Status", "Source.Type")]
+
+
+
+
+chisq.test(chi.subset)
+
+
+# Correlations among cruise.percentage, miles, PurchaseSum, VolSum, scale.percentage, purch Rate, winter, summer, 
+# spring, fall, OurPrice, WonPrice.
+
+
+numerical<-c("cruise.percentage", "GDU.Miles", "GFI.Miles","GLC.Miles","GVI.Miles","TAC.Miles", "scale.percentage", "purch.Rate","winter", "summer", "spring", "fall", 
+                                "OurPrice", "WonPrice")
+numericalpart<-WonLikelihood [numerrical]
+
+
+library(Hmisc)
+rcorr(numericalpart, type="pearson")
+
+
+###############################################################################################
+# Decision Tree
+install.packages("rpart")
+install.packages("rpart.plot")
+install.packages("party")
+install.packages("ROCR")
+install.packages("magrittr")
+library("rpart")
+library("rpart.plot")
+library("party")
+library("ROCR")
+library("magrittr")
+# build the decision tree model
+decision <- rpart (BidStatus~., data=WonLikelihood, method="class")
+rpart.plot(decision, extra=106)
+# make predictions
+prediction<- predict(decision, WonLikelihood, type="class")
+table.tree<- table(WonLikelihood$BidStatus,prediction)
+table.tree
+
+
+# measure performance, test data for accuracy
+accuracy <- sum(diag(table.tree))/sum(table.tree)
+print(paste("Accuracy for test", accuracy))
+
+
+# try on train and test datasets
+set.seed(5862)
+training.samples<- new $ BidStatus %>%
+  createDataPartition(p=0.80, list=FALSE)
+train<- new [training.samples,]
+test <- new [-training.samples,]
+
+
+decision.sub <- rpart (BidStatus~., data=train, method="class")
+prediction.sub<- predict(decision.sub, test, type="class")
+table.tree.sub<- table(test$BidStatus,prediction.sub)
+table.tree.sub
+accuracy.sub <- sum(diag(table.tree.sub))/sum(table.tree.sub)
+print(paste("Accuracy for test", accuracy.sub))
+
+
+
+
+# Tune the hyper-parameters
+accuracy.tune<- function (decision){
+  prediction<-predict(decision,test, type="class")
+  table <- table(test$BidStatus, prediction)
+  accuracy <- sum(diag(table))/sum(table)
+  accuracy
+}
+
+
+control<- rpart.control(minsplit=4,minbucket=round(5/3),maxdepth=3,cp=0)
+tune.decision<- rpart(BidStatus~., data=train, method='class', control=control)
+accuracy.tune(tune.decision)
+
+
+
+
+
+
+
+
+# new data (weighted price) after added more variables---------------------------------------------------------
+decision <- rpart (BidStatus~., data=fulldata, method="class")
+rpart.plot(decision, extra=106)
+# make predictions
+prediction<- predict(decision, fulldata, type="class")
+table.tree<- table(fulldata$BidStatus,prediction)
+table.tree
+
+
+set.seed(5862)
+training.samples<- fulldata $ BidStatus %>%
+  createDataPartition(p=0.80, list=FALSE)
+train<- fulldata [training.samples,]
+test <- fulldata [-training.samples,]
+
+
+decision.sub <- rpart (BidStatus~., data=train, method="class")
+prediction.sub<- predict(decision.sub, test, type="class")
+table.tree.sub<- table(test$BidStatus,prediction.sub)
+table.tree.sub
+accuracy.sub <- sum(diag(table.tree.sub))/sum(table.tree.sub)
+print(paste("Accuracy for test", accuracy.sub))
+
+
+
+
+tree.roc <- decision.sub %>%
+  predict (newdata=test) %>%
+  prediction (test$BidStatus) %>%
+  performance("tpr","fpr")
+
+
+########################################################################################
+
+
+#------------------------------------------------
+
+
+# Logistic Regression 
+
+
+#------------------------------------------------
+# 1. Install packages 
+#-------------------------
+install.packages("corrplot") # scatter plot
+install.packages("Amelia")
+install.packages("mlbench")
+install.packages("aod")
+install.packages("tidyverse")
+install.packages("broom")
+install.packages("caret")
+install.packages("MASS")
+install.packages("magrittr")
+install.packages("ResourceSelection")
+install.packages("MKmisc")
+install.packages("pROC") # ROC plot, but only works when have one independent variable
+install.packages("FactoMineR") # PCA() more details for principle components
+
+
+library("corrplot")
+library("Amelia")
+library("mlbench")
+library("aod")
+library("tidyverse")
+library("broom")
+library("caret")
+library("MASS")
+library("magrittr")
+library("ResourceSelection")
+library("MKmisc")
+library("pROC")
+library("FactoMineR")
+
+
+set.seed(5862)# set seed for radom selection using office phone number
+#------------------------------------
+# 2. loading and exploring data 
+#------------------------------------
+remove(list=ls())
+WonLikelihood <-  read.csv(file.choose(), header=TRUE, sep=",")
+names(WonLikelihood)
+head(WonLikelihood)
+summary(WonLikelihood)
+summary(WonLikelihood$RestrictionStatus)
+summary(WonLikelihood$BidStatus)
+summary(WonLikelihood$BusinessUnit)
+summary(WonLikelihood$Logability)
+summary(WonLikelihood$Supervisor)
+summary(WonLikelihood$CertificationType)
+summary(WonLikelihood$GutchessScaleRules)
+
+
+numerical<-c("CruisePercentage", "GDU.Miles", "GFI.Miles","GLC.Miles","TAC.Miles", "BidPrice", "VolSum", 
+             "GoodPercentage","winter", "summer", "spring", "fall", "Misc", "PriceWmisc")
+numericalpart<-WonLikelihood [numerical]
+#------------------------------------
+# Visualizing data
+#-----------------------------------
+
+
+par(mfrow=c(2,7))
+for(i in 1:14){
+  hist(numericalpart[,i], main=names(numericalpart)[i])
+}
+
+
+par(mfrow=c(2,7))
+for(i in 1:14){
+  boxplot(numericalpart[,i], main=names(numericalpart)[i])
+}
+
+
+par(mfrow=c(1,1))
+library("Amelia")
+library("mlbench")
+missmap(WonLikelihood, col=c("blue", "red"), legend=FALSE)
+        
+library("corrplot")
+correlations<- cor (numericalpart)
+corrplot(correlations, method="circle")
+
+
+pairs(WonLikelihood, col=WonLikelihood$BidStatus)
+
+
+#---------------------------------------------------------------
+#diagnostics
+#---------------------------------------------------------------
+
+
+#influential value
+par(mfrow=c(1,1))
+plot(trainsingle.full, which=4, id.n =3)
+
+
+# extract model results
+model.data<-augment (trainsingle.full) %>%
+  mutate(index=1:n())
+
+
+# top 3 largest values, according to Cook's distance
+model.data %>% top_n (3, .cooksd)
+
+
+# filter potential influential data point
+model.data %>%
+  filter(abs(.std.resid)>3)
+
+
+######################################################################################
+# ASH, CHE,HMA,ROK,RMA are the good quality timbers
+# spring (3,4,5), summer (6,7,8), fall (9,10,11), winter (12,1,2)
+######################################################################
+#----------------------------------------
+# generalized linear mixed model 
+#----------------------------------------
+library(lme4)
+library(nlme)
+
+
+# build model based on train data
+fulldata <- read.csv(file.choose(), header=TRUE,sep = ",")
+
+
+newbid <- fulldata[1:7,]
+full <- fulldata[8:921,]
+
+
+set.seed(5862)
+training.samples<- full $ BidStatus %>%
+  createDataPartition(p=0.80, list=FALSE)
+train.data<- full[training.samples,]
+test.data <- full[-training.samples,]
+
+
+glmm<- glmer(BidStatus~ASH+BIR+CHE+HIC+HMA+POP+RMA+ROK+WAL+WOK+ConsultantVol+Vol+Good.
+             +winter+summer+spring+fall+Cruise.+BusinessUnit+GDU.Miles+GFI.Miles+GLC.Miles+TAC.Miles+Logability
+             +Misc+RestrictionStatus+CertificationType+Consistent+GutchessPrice
+             +(1|GutchessScaleRules)+(1|ConsultantScaleRule),data=full,family = binomial(link="logit"))
+summary (glmm)
+
+
+# goodness of fit
+gof<- hoslem.test(ifelse(train.data$BidStatus == "WON",1,0), fitted(glmm), g=10)
+gof
+cbind(gof$observed, gof$expected)
+cbind(gof$observed, gof$expected)/apply(gof$observed, 1, sum)
+
+
+# try on test data and check the accuracy
+probability <- predict(glmm, newbid, type="response")
+probability <- data.frame(round(probability, digits = 4))
+predicted <- ifelse(probability > 0.5, "WON", "LOST")
+observed <- test.data$BidStatus
+table<-data.frame(predicted, observed)
+mean(predicted == observed)
+
+
+coef(glmm)
+var.cov <- vcov(glmm)
+
+
+pricezero <- test.data
+for (i in 1:182){
+  if(pricezero$GutchessPrice[i]>0){
+    pricezero$GutchessPrice[i]=0
+  }
+}
+
+
+p.predict <- predict(glmm, pricezero, type="response") # set GutchessPrice=0
+p<- 0.8
+winprice<- (1/(2.920))*(log(p/(1-p))-log(p.predict/(1-p.predict)))
+compare<- data.frame(round(exp(winprice),digits = 2), exp(test.data$GutchessPrice))
+compare
+
+
+
+
+glm <- glm(BidStatus~ ASH+ BIR+BusinessUnit+ CertificationType+CHE+COK+Consistent+ConsultantScaleRule+ConsultantVol+
+             Cruise.+Fall+GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessPrice+GutchessScaleRule+HIC+HMA+
+             LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+Spring+Summer+TAC.Miles+Vol+WAL+Winter
+           ,data=wonlikelihood, family= binomial)
+summary(glm)
+probability.glm <- predict(glm, newbid, type="response")
+probability.glm
+probability <- data.frame(round(probability.glm, digits = 4))
+predicted <- ifelse(probability > 0.5, "WON", "LOST")
+predicted
+#################################################################################################
+install.packages("lme4") 
+install.packages("glmmADMB")
+install.packages("MCMCglmm")
+install.packages("blme")
+install.packages("nlme")
+install.packages("MASS")
+
+
+## primary GLMM-fitting packages:
+library(lme4)
+library(glmmADMB)
+library(MCMCglmm)
+library(blme)
+library(MASS)          ## for glmmPQL
+library(nlme)          ## for intervals(), tundra example
+
+
+# win bid price prediction
+remove(list=ls())
+win <-  read.csv(file.choose(), header=TRUE, sep=",")
+str(win)
+head (win)
+# find data probability distribution 
+
+
+qqp(win$WinPrice,"norm")
+
+
+qqp(win$WinPrice,"lnorm") # lognormal
+
+
+nbinom <- fitdistr (win$WinPrice,"Negative Binomial")
+qqp(win$WinPrice,"nbinom",size = nbinom$estimate[[1]],mu=nbinom$estimate[[2]])
+
+
+poison <- fitdistr(win$WinPrice,"Poisson")
+qqp(win$WinPrice, "pois", poisson$estimate)
+
+
+gamma <- fitdistr(win$WinPrice,"gamma")
+qqp (win$WinPrice,"gamma", shape =gamma$estimate[[1]], rate=gamma$estimate[[2]])
+
+
+# data is not normally distributed 
+# test whether we can use penalized quasilikelihood or not 
+#(PQL can deal with non=normal data, unbalanced design and cross random effectys)
+# lognormal distribution is not a discretized distribution, we can proceed  with PQL
+PQL <- glmmPQL(WinPrice ~WinPrice +ConsultantVol+SpeciesPrice+LumberPrice+Bidders+Competitor+GoodPercentage+winter+summer
+               +spring+fall+CruisePercentage+LandownerType+Logability+Misc+RestrictionStatus+CertificationType
+               +ConsultantScaleRule, ~1| Species/SourceID,family=gaussian(link="log"),data=win, verbose=FALSE)
+summary (PQL)
+
+
+linearmixed <- lmer (WinPrice ~ConsultantVol*SpeciesPrice*LumberPrice*Bidders*Competitor*GoodPercentage*winter*summer
+                     *spring*fall*CruisePercentage*LandownerType*Logability*Misc*RestrictionStatus*CertificationType
+                     *ConsultantScaleRule*(1|Species)*(1|SourceID),data=win)
+
+
+#####################################################################
+installed.packages("ggmap")
+install.packages("Rcpp")
+library(ggmap)
+library(Rcpp)
+location <-  read.csv(file.choose(), header=TRUE, sep=",")
+plot(location$Latitude,location$Longitud,xlab="Latitude",ylab="Longitude")
+qmap("cortland",zoom=13)
+US<-qmap("United States", zoom = 4,color=)  #First, get a map of cortland
+
+
+cortlandMap+                                        ##This plots the cortland Map
+  geom_point(aes(x = Longitude, y = Latitude, colour=Type), data = location)    ##This adds the points to it
+#################################################################################################
+# Naive Bayes
+install.packages("e1071")
+install.packages("caret")
+install.packages("mlr")
+
+
+library("mlr")
+library("e1071")
+library("caret")
+
+
+remove(list=ls())
+#----------------------------------------------------------------------
+WonLikelihood <-  read.csv(file.choose(), header=TRUE, sep=",")
+head(WonLikelihood)
+wonlikelihood <- WonLikelihood [c("BidStatus","Competitor","VolSum","BidPrice", "GoodPercentage", "winter","summer","spring",
+                                  "fall","RestrictionStatus","CruisePercentage", "BusinessUnit","GDU.Miles","GFI.Miles",
+                                  "GLC.Miles","TAC.Miles","BWP.Miles","JobName","LandownerType","Logability","OwnerName",
+                                  "Supervisor","Misc","CertificationType","GutchessScaleRules","PriceWmisc","SOURCEID")]
+
+
+# save into a data frame and view it
+wonlikelihood_df <- as.data.frame(wonlikelihood)
+
+
+# creating data from table
+repeating_sequence <- rep.int(seq_len(nrow(wonlikelihood_df)), times=1)
+
+
+# create the dataset by row repetition created
+wonlikelihood_dataset <- wonlikelihood_df[repeating_sequence,]
+
+
+# no longer need the frequency, drop the feature
+wonlikelihood_dataset$Freq <- NULL
+#----------------------------------------------------------------------
+# fitting the naive bayes model
+Naive_Bayes_Model<- naiveBayes(BidStatus~.,data=wonlikelihood_dataset)
+
+
+# print the model summary
+Naive_Bayes_Model
+
+
+# prediction on the dataset
+NB_Predictions <- predict(Naive_Bayes_Model,wonlikelihood_dataset)
+
+
+# confusion matrix to check accuracy
+table(NB_Predictions, wonlikelihood_dataset$BidStatus)
+NB_Predictions
+
+
+# naive bayes in mlr
+# create a classification task for learning on dataset and specify the target feature
+task=makeClassifTask(data=wonlikelihood_dataset, target="BidStatus")
+
+
+# initialize the naive bayes classifier
+selected_model=makeLearner("classif.naiveBayes")
+
+
+# train the model
+NB_mlr=train(selected_model, task)
+
+
+# read the model learned
+NB_mlr$learner.model
+Naive Bayes Classifier for Discrete Predictors
+# predict on the dataset without passing the target feature
+predictions_mlr=as.data.frame(predict(NB_mlr,newdata=wonlikelihood_dataset[,1:3]))
+# confusion matrix to check accuracy
+table(predictions_mlr[,1], wonlikelihood_dataset$BidStatus)
+
+
+
+
+nb.default <- naiveBayes(BidStatus~., data=wonlikelihood)
+default.pred <- predict (nb.default, wonlikelihood,type="class")
+table (default.pred, wonlikelihood$BidStatus, dnn=c("Prediction", "Actual"))
+
+
+
+
+nb.laplace1 <- naiveBayes(BidStatus~., data=wonlikelihood, laplace = 1)
+laplace1.pred <- predict (nb.laplace1, wonlikelihood, type="class")
+table(laplace1.pred, wonlikelihood$BidStatus, dnn=c("Prediction", "Actual"))
+
+
+
+
+
+
+#----------------------------------------------------------------------------------
+nb.default <- naiveBayes(BidStatus~., data=WonLikelihood)
+default.pred <- predict (nb.default, WonLikelihood,type="class")
+table (default.pred, WonLikelihood$BidStatus, dnn=c("Prediction", "Actual"))
+#----------------------------------------------------------------------------------
+nb.laplace1 <- naiveBayes(BidStatus~., data=WonLikelihood, laplace = 1)
+laplace1.pred <- predict (nb.laplace1, WonLikelihood, type="class")
+table(laplace1.pred, WonLikelihood$BidStatus, dnn=c("Prediction", "Actual"))
+#----------------------------------------------------------------------------------
+
+
+
+
+set.seed(1268)
+training.samples<- WonLikelihood $ BidStatus %>%
+  createDataPartition(p=0.80, list=FALSE)
+train<- WonLikelihood [training.samples,]
+test <- WonLikelihood [-training.samples,]
+NB <- naiveBayes(BidStatus~., data=train )
+preq <- predict(NB,test, type="class")
+table(preq,test$BidStatus,dnn=c("Prediction", "Actual"))
+
+
+NB.laplace <- naiveBayes(BidStatus ~., data=train, laplace=1)
+laplace <- predict(NB.laplace, test, type="class")
+table(laplace, test$BidStatus, dnn=c("Prediction","Actual"))
+
+
+
+
+
+
+# new data (weighted lumber price) after added more variables---------------------------------------------------------
+fulldata <-  read.csv(file.choose(), header=TRUE, sep=",")
+
+
+nb.default <- naiveBayes(BidStatus~., data=fulldata)
+default.pred <- predict (nb.default, fulldata,type="class")
+table (default.pred, fulldata$BidStatus, dnn=c("Prediction", "Actual"))
+#----------------------------------------------------------------------------------
+nb.laplace1 <- naiveBayes(BidStatus~., data=fulldata, laplace = 1)
+laplace1.pred <- predict (nb.laplace1, fulldata, type="class")
+table(laplace1.pred, fulldata$BidStatus, dnn=c("Prediction", "Actual"))
+
+
+
+
+set.seed(5862)
+training.samples<- fulldata $ BidStatus %>%
+  createDataPartition(p=0.80, list=FALSE)
+train<- fulldata [training.samples,]
+test <- fulldata [-training.samples,]
+NB <- naiveBayes(BidStatus~., data=train )
+preq <- predict(NB,test, type="class")
+table.naive<-table(preq,test$BidStatus,dnn=c("Prediction", "Actual"))
+accuracy.naive <- sum(diag(table.naive))/sum(table.naive)
+print(paste("Accuracy for test", accuracy.naive))
+
+
+NB.laplace <- naiveBayes(BidStatus ~., data=train, laplace=1)
+laplace <- predict(NB.laplace, test, type="class")
+table(laplace, test$BidStatus, dnn=c("Prediction","Actual"))
+######################################################################################################
+
+
+# Neural Network
+install.packages("MASS")
+library(MASS)
+
+
+data <- read.csv (file.choose(), header=TRUE,sep = ",")
+
+
+numerical<-c("ASH", "BAS","BIR","changed.Con.Vol","changed.Gut.Vol","CHE","ConsultantVol","Cruise.","fall", 
+             "GBI.Miles","GDU.Miles","GFI.Miles","GLC.Miles","GVI.Miles","TAC.Miles", "GutchessPrice", "HIC", 
+             "HMA","POP","RMA","ROK","winter", "summer", "spring", "fall", "Misc", "Good.","Vol","WAL","WOK")
+numerical<-data [numerical]
+
+
+# Ramdom sampling
+samplesize <-  0.60 * nrow(data)
+set.seed(80)
+index <- sample( seq_len ( nrow ( data ) ), size = samplesize )
+
+
+# Create training and test set
+datatrain <- data[ index, ]
+datatest <- data[ -index, ]
+
+
+# Scale data for neural network
+
+
+max <- apply(numerical , 2 , max)
+min <- apply(numerical, 2 , min)
+scaled <- as.data.frame(scale(numerical, center = min, scale = max - min))
+
+
+
+
+## Fit neural network 
+
+
+# install library
+install.packages("neuralnet ")
+
+
+# load library
+library(neuralnet)
+
+
+# creating training and test set
+trainNN <- scaled[index , ]
+testNN <- scaled[-index , ]
+
+
+# fit neural network
+set.seed(2)
+NN = neuralnet(GutchessPrice ~ ASH+ BAS+BIR+changed.Con.Vol+changed.Gut.Vol+CHE+ConsultantVol+Cruise.+fall+
+               GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+GVI.Miles+TAC.Miles+HIC+ 
+               HMA+POP+RMA+ROK+winter+summer+spring+fall+Misc+Good.+Vol+WAL+WOK, trainNN, hidden = 3 , linear.output = T )
+
+
+# plot neural network
+plot(NN)
+## Prediction using neural network
+predict_testNN = compute(NN, testNN[,c(1:5)])
+predict_testNN = (predict_testNN$net.result * (max(data$rating) - min(data$rating))) + min(data$rating)
+
+
+plot(datatest$rating, predict_testNN, col='blue', pch=16, ylab = "predicted rating NN", xlab = "real rating")
+
+
+abline(0,1)
+
+
+# Calculate Root Mean Square Error (RMSE)
+RMSE.NN = (sum((datatest$rating - predict_testNN)^2) / nrow(datatest)) ^ 0.5
+
+
+
+
+## Cross validation of neural network model
+
+
+# install relevant libraries
+install.packages("boot")
+install.packages("plyr")
+
+
+# Load libraries
+library(boot)
+library(plyr)
+
+
+# Initialize variables
+set.seed(50)
+k = 100
+RMSE.NN = NULL
+
+
+List = list( )
+
+
+# Fit neural network model within nested for loop
+for(j in 10:65){
+  for (i in 1:k) {
+    index = sample(1:nrow(data),j )
+    
+    trainNN = scaled[index,]
+    testNN = scaled[-index,]
+    datatest = data[-index,]
+    
+    NN = neuralnet(rating ~ calories + protein + fat + sodium + fiber, trainNN, hidden = 3, linear.output= T)
+    predict_testNN = compute(NN,testNN[,c(1:5)])
+    predict_testNN = (predict_testNN$net.result*(max(data$rating)-min(data$rating)))+min(data$rating)
+    
+    RMSE.NN [i]<- (sum((datatest$rating - predict_testNN)^2)/nrow(datatest))^0.5
+  }
+  List[[j]] = RMSE.NN
+}
+
+
+Matrix.RMSE = do.call(cbind, List)
+
+
+
+
+
+
+##############################################
+install.packages("nnet")
+library(nnet)
+ideal <- class.ind(data$BidStatus)
+seedsANN <- nnet(data[datatrain,-3], ideal[datatrain,], size=10, softmax=TRUE)
+predict(seedsANN, data[seedstrain,-3], type="class")
+
+
+
+
+trainmodel <- nnet(BidStatus~., data=datatrain,size = 10)
+testmodel <- predict (trainmodel,datatest[-3],type = "class")
+observed <- datatest$BidStatus
+crossvalidation<-data.frame(testmodel, observed)
+mean(testmodel == observed)
+
+
+newbid <- data[1:16,]
+full <- data[17:980,]
+classification <- nnet(BidStatus~., data=full,size = 10)
+prediction <- predict (classification,newbid[-3],type = "class")
+prediction
+######################################################################################################################
+ Quantile regression
+library("quantreg")
+fulldata <- read.csv(file.choose(), header=TRUE,sep = ",")
+full <- fulldata[-1034,]
+newbid <- fulldata[1034,]
+
+
+a <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.70, data=full)
+
+
+
+
+b <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+               ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+               HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+               Vol+WAL+winter+WOK+Difference., tau=0.80, data=full)
+
+
+c <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+               ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+               HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+               Vol+WAL+winter+WOK+Difference., tau=0.81, data=full)
+
+
+d <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+               ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+               HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+               Vol+WAL+winter+WOK+Difference., tau=0.82, data=full)
+
+
+e<- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+               ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+               HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+               Vol+WAL+winter+WOK+Difference., tau=0.83, data=full)
+
+
+f <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+               ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+               HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+               Vol+WAL+winter+WOK+Difference., tau=0.84, data=full)
+
+
+g <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.85, data=full)
+
+
+h <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.86, data=full)
+
+
+i <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                    ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                    HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                    Vol+WAL+winter+WOK+Difference., tau=0.87, data=full)
+
+
+j <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.88, data=full)
+
+
+k <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+               ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+               HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+               Vol+WAL+winter+WOK+Difference., tau=0.89, data=full)
+
+
+l <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                 ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                 HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                 Vol+WAL+winter+WOK+Difference., tau=0.90, data=full)
+
+
+m <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.91, data=full)
+
+
+n <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.92, data=full)
+
+
+o <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.93, data=full)
+
+
+p <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.94, data=full)
+
+
+q <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                     ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                     HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                     Vol+WAL+winter+WOK+Difference., tau=0.95, data=full)
+
+
+r <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.96, data=full)
+s <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.97, data=full)
+t <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.98, data=full)
+
+
+u <- rq (GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                Vol+WAL+winter+WOK+Difference., tau=0.99, data=full)
+
+
+
+
+gutchess.a<- exp (predict(a,newbid))
+gutchess.b<- exp (predict(b,newbid))
+gutchess.c <- exp (predict(c,newbid))
+gutchess.d <- exp (predict(d,newbid))
+gutchess.e <- exp (predict(e,newbid))
+gutchess.f <- exp (predict(f,newbid))
+gutchess.g <- exp (predict(g,newbid))
+gutchess.h <- exp (predict(h,newbid))
+gutchess.i <- exp (predict(i,newbid))
+gutchess.j <- exp (predict(j,newbid))
+gutchess.k <- exp (predict(k,newbid))
+gutchess.l <- exp (predict(l,newbid))
+gutchess.m <- exp (predict(m,newbid))
+gutchess.n <- exp (predict(n,newbid))
+gutchess.o <- exp (predict(o,newbid))
+gutchess.p <- exp (predict(p,newbid))
+gutchess.q <- exp (predict(q,newbid))
+gutchess.r <- exp (predict(r,newbid))
+gutchess.s <- exp (predict(s,newbid))
+gutchess.t <- exp (predict(t,newbid))
+gutchess.u <- exp (predict(u,newbid))
+
+
+prediction <- matrix (c(gutchess.a,gutchess.b,gutchess.c,gutchess.d,gutchess.e,gutchess.f,gutchess.g,gutchess.h,gutchess.i,gutchess.j,gutchess.k,gutchess.l,gutchess.m,
+                        gutchess.n,gutchess.o,gutchess.p,gutchess.q,gutchess.r,gutchess.s,gutchess.t,gutchess.u))
+gutchessprice <- data.frame(round(prediction,digits=0))
+gutchessprice
+
+
+winprice <- prediction*(1-newbid$Difference.)
+winprice
+
+
+regression <- lm(GutchessPrice ~ASH+BIR+BusinessUnit+CertificationType+CHE+Consistent+ConsultantScaleRule+
+                   ConsultantVol+Cruise.+fall +GBI.Miles+GDU.Miles+GFI.Miles+GLC.Miles+Good.+GutchessScaleRules+GVI.Miles+
+                   HIC+HMA+LandownerType+Logability+Misc+POP+RestrictionStatus+RMA+ROK+spring+summer+Supervisor+TAC.Miles+
+                   Vol+WAL+winter+WOK, data=full)
+forecast <- exp (predict(regression,newbid))
+
+
+#############################################################################################################
+library(ggplot2)
+box.his <- fulldata[c("Good.")]
+boxplot(box.his)
+summary(box.his)
+
+
+box.his <- fulldata[c("Vol")]
+boxplot(box.his)
+summary(box.his)
+
+
+# random forests-----------------------------------------------------------------------------------
+# install.packages("randomForest")
+
+
+
+
+library("randomForest")
+
+
+
+
+fulldata <- read.csv(file.choose(), header=TRUE,sep = ",")
+
+
+
+
+newbid <- fulldata[1:72,]
+full <- fulldata[73:1036,]
+
+
+
+
+
+
+forests.fit <- randomForest (as.factor(BidStatus)~.,data=full,importance=TRUE, ntree=3000,na.action=na.omit)
+forests.fit
+
+
+forests.prediction<- predict (forests.fit,newbid)
+forests.prediction
+probability <- predict (forests.fit,newbid[-3],type="prob")
+probability
+
+
+forests.fit <- randomForest (as.factor(BidStatus)~.,data=datatrain,importance=TRUE, ntree=3000,na.action=na.omit)
+predicted<- predict (forests.fit,datatest)
+observed <- datatest$BidStatus
+table<-data.frame(predicted, observed)
+mean(predicted == observed)
+
+
+
+
+#  good% boxplot
+install.packages("ggplot2")
+library(ggplot2)
+box.his <- full[c("GutchessPrice")]
+boxplot(box.his)
+summary(box.his)
+
+
+box.new <- newbid[c("GutchessPrice")]
+boxplot(box.new)
+summary(box.new)
+
+
+##########################################################################################################
+# random forests-----------------------------------------------------------------------------------
+# install.packages("randomForest")
+
+
+
+
+library("randomForest")
+library(dplyr)
+
+
+
+
+fulldata <- read.csv(file.choose(), header=TRUE,sep = ",")
+
+
+fulldata <- fulldata %>%
+  mutate_if(is.integer, as.) %>%
+  mutate_if(is.character, as.factor)
+
+
+newbid <- fulldata[1:24,]
+full <- fulldata[25:988,]
+
+
+
+
+
+
+forests.fit <- randomForest (as.factor(BidStatus)~.,data=full,importance=TRUE, ntree=3000,na.action=na.omit)
+forests.fit
+
+
+forests.prediction<- predict (forests.fit,newbid)
+forests.prediction
+probability <- predict (forests.fit,newbid[-3],type="prob")
+probability
+
+
+
+
+#  good% boxplot
+install.packages("ggplot2")
+library(ggplot2)
+box <- fulldata[c("Good.")]
+boxplot(box)
+summary(box)
+
+
+options(java.parameters = "-Xmx5G")
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(lubridate)
+
+
+# read data and prepare the data for the smc calculation-------------------------------------
+# read FIFO data
+# smc <- read.Alteryx("#1", mode="data.frame")
+smc <- read.csv('C:/Users/cwang/Desktop/3MonthRollingAverage.csv', stringsAsFactors = FALSE)
+smc$FiscalMonth <- ymd(smc$FiscalMonth)
+str(smc)
+
+
+# read additional cost from gp
+gpsmc <- read.csv('C:/Users/cwang/Desktop/smc_gp_cost.csv', stringsAsFactors = FALSE)
+
+
+# create 3 month rolling average for the additional cost
+gpsmc$FiscalPeriod <- ymd(gpsmc$FiscalPeriod)
+gpsmc <- gpsmc %>%
+  group_by(FiscalPeriod, TLIFOMill) %>%
+  summarise(Value = sum(NetAmt)) %>%
+  mutate(Name = ifelse(TLIFOMill == 'GHI', 'GHI Additional Cost (SW, SS, FP)', 'CNY Additional Cost (SW, SS, FP)')) %>%
+  mutate(Mill = ifelse(TLIFOMill == 'GHI', 'GHI', 'GLC')) %>%
+  mutate(Species = '') %>%
+  rename(FiscalMonth = FiscalPeriod) %>%
+  select(Name, Mill, Species, FiscalMonth, Value)
+
+
+gpsmc$FiscalMonth <- ymd(gpsmc$FiscalMonth)
+
+
+gpsmcResult <- data.frame(Name = as.character(),
+                          Mill = as.character(),
+                          Species = as.character(),
+                          Value = as.numeric(),
+                          FiscalMonth = ymd())
+
+
+FiscalMonth <- unique(ymd(gpsmc$FiscalMonth))[unique(ymd(gpsmc$FiscalMonth)) >= ymd('2017-03-01')]
+for (i in 1:length(FiscalMonth)) {
+  gpsmcData <- gpsmc[gpsmc$FiscalMonth <= FiscalMonth[i] & gpsmc$FiscalMonth >= FiscalMonth[i] - months(2),] %>%
+    group_by(Name, Mill, Species) %>%
+    summarise(Value = sum(Value)) %>%
+    mutate(FiscalMonth = ymd(FiscalMonth[i]))
+  
+  gpsmcResult <- gpsmcResult %>%
+    bind_rows(gpsmcData)
+}
+
+
+# add sort order 500
+gpsmcResult$Sort <- 500
+
+
+# union rows
+smc <- smc %>%
+  bind_rows(gpsmcResult)
+
+
+# All Green Cost (CNY, GFI, GHI) ----------------------------
+## by species
+AllGreenCost <- smc[smc$Name == 'GLC Green Grade $ Cost' & smc$Species != 'Total',] %>%
+  inner_join(smc[smc$Name == 'GFI Green Grade $ Cost' & smc$Species != 'Total',], by = c('FiscalMonth', 'Species')) %>%
+  select(FiscalMonth, Species, Value.x, Value.y) %>%
+  rename(GLC = Value.x, GFI = Value.y) %>%
+  inner_join(smc[smc$Name == 'GHI Green Grade $ Cost' & smc$Species != 'Total',], by = c('FiscalMonth', 'Species')) %>%
+  select(FiscalMonth, Species, GLC, GFI, Value) %>%
+  rename(GHI = Value) %>%
+  mutate(Value = GLC + GFI + GHI) %>%
+  select(FiscalMonth, Species, Value) %>%
+  mutate(Name = 'All Green Cost (CNY, GFI, GHI)') %>%
+  mutate(Mill = 'ALL') %>%
+  mutate(Sort = 501)
+
+
+##################################################################################################################
+
+
+# spatial regression
+
+
+# slx spatially lagged x
+# sar spatial lag
+# sem spatial error
+
+
+install.packages("spdep")
+install.packages("rgdal")
+install.packages("rgeos")
+install.packages("ggmap")
+
+
+library("rgdal")
+library("maps")
+library("ggmap")
+
+
+
+
+visited <- c ("Boston, MA", "Anchorage,AK")
+lvisited <- geocode (visited)
+visit.x <- lvisited $ lon
+visit.y <- lvisited $ lat
+
+
+plot.new()
+map("world", fill=TRUE, col="white", bg="lightblue", ylim=c(-60))
+
+
+##############################################################################################################################
+### time series analysis
+install.packages("lubridate") # read start date from a exact date
+install.packages("TTR") # smooth time series
+install.packages("tseries") # stationary
+install.packages("forecast")
+install.packages("readxl")
+
+
+library("lubridate")
+library("TTR")
+library("tseries")
+library("forecast")
+library("readxl")
+
+
+
+
+# read data
+remove(list=ls())
+lumber.price <-  read.csv(file.choose(), header=TRUE, sep=",")
+
+
+# ASH analysis--------------------------------------------------------
+ash <- lumber.price [which(lumber.price$Species=="ASH"),]
+ash <- ash [c("Price")]
+ash<- ts(ash, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+ash
+plot.ts (ash)
+summary(ash)
+abline(reg=lm(ash~time(ash)))
+cycle(ash)#This will print the cycle across years.
+plot(aggregate(ash,FUN=mean))#This will aggregate the cycles and display a year on year trend
+boxplot(ash~cycle(ash))#Box plot across months will give us a sense on seasonal effect
+
+
+acf.ash <- acf (ash) # autocorrelation
+pac.ash <- pacf (ash) # partial autocorrelation
+
+
+
+
+
+
+# decomposing non-seasonal data
+ash.sma<- SMA (ash, type="mult")
+plot.ts(ash.sma)
+
+
+## decomposing seasonal data
+# ash.components <- decompose (ash)
+# plot.ts(ash.components)
+## seasonally adjusting
+# ash.adjusted <- ash - ash.components$ seasonal
+
+
+# test stationary
+adf.test(diff(log(ash)),alternative = "stationary", k=0) # p-value , 0.05 indicates the data is stationary
+kpss.test(ash)
+# fit model
+ash.fit<- arima(log(ash),c(1,0,0), method = "ML")
+ash.fit
+# make prediction
+forecast(ash.fit,16)
+plot(forecast(ash.fit,16))
+exp(7.329242)
+
+
+# BIR analysis------------------------------------
+bir <- lumber.price [which(lumber.price$Species=="BIR"),]
+bir <- bir [c("Price")]
+bir<- ts(bir, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+summary(bir)
+plot.ts (bir)
+abline(reg=lm(bir~time(bir)))
+
+
+adf.test(diff(log(bir)),alternative = "stationary", k=0)
+acf.bir <- acf (bir) 
+pac.bir <- pacf (bir)
+
+
+bir.fit<- arima(log(bir),c(1,0,0))
+bir.fit
+
+
+forecast(bir.fit,8)
+plot(forecast(bir.fit,8))
+exp(6.9833)
+# CHE ---------------------------------------------
+che <- lumber.price [which(lumber.price$Species=="CHE"),]
+che <- che [c("Price")]
+che<- ts(che, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+summary(che)
+plot.ts (che)
+abline(reg=lm(che~time(che)))
+
+
+adf.test(diff(log(che)),alternative = "stationary", k=0)
+acf.che <- acf (che) 
+pac.che <- pacf (che)
+
+
+che.fit<- arima(log(che),c(1,0,0),method="ML")
+che.fit
+
+
+forecast(che.fit,8)
+plot(forecast(che.fit,8))
+exp(7.4523)
+# HIC ------------------------------------------------------------------
+hic <- lumber.price [which(lumber.price$Species=="HIC"),]
+hic <- hic [c("Price")]
+hic<- ts(hic, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+summary(hic)
+plot.ts (hic)
+abline(reg=lm(hic~time(hic)))
+
+
+adf.test(diff(log(hic)),alternative = "stationary", k=0)
+acf.hic <- acf (hic) 
+pac.hic <- pacf (hic)
+
+
+hic.fit<- arima(log(hic),c(1,3,0))
+hic.fit
+
+
+forecast(hic.fit,8)
+plot(forecast(hic.fit,8))
+exp(7.047517)
+# HMA ------------------------------------------------------------------
+hma<- lumber.price [which(lumber.price$Species=="HMA"),]
+hma <- hma [c("Price")]
+hma<- ts(hma, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+summary(hma)
+plot.ts (hma)
+abline(reg=lm(hma~time(hma)))
+
+
+adf.test(diff(log(hma)),alternative = "stationary", k=0)
+acf.hma <- acf (hma) 
+pac.hma <- pacf (hma)
+
+
+hma.fit<- arima(log(hma),c(1,0,0))
+hma.fit
+
+
+forecast(hma.fit,8)
+plot(forecast(hma.fit,8))
+exp(7.22)
+exp(7.21)
+exp(7.20)
+exp(7.19)
+# POP --------------------------------------------------------
+pop<- lumber.price [which(lumber.price$Species=="POP"),]
+pop <- pop [c("Price")]
+pop<- ts(pop, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+summary(pop)
+plot.ts (pop)
+abline(reg=lm(pop~time(pop)))
+
+
+adf.test(diff(log(pop)),alternative = "stationary", k=0)
+acf.pop <- acf (pop) 
+pac.pop <- pacf (pop)
+
+
+pop.fit<- arima(log(pop),c(1,0,0))
+pop.fit
+
+
+forecast(pop.fit,8)
+plot(forecast(pop.fit,8))
+exp(6.507)
+# RMA --------------------------------------------------------
+rma<- lumber.price [which(lumber.price$Species=="RMA"),]
+rma <- rma [c("Price")]
+rma<- ts(rma, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+summary(rma)
+plot.ts (rma)
+abline(reg=lm(rma~time(rma)))
+
+
+adf.test(diff(log(rma)),alternative = "stationary", k=0)
+acf.rma <- acf (rma) 
+pac.rma <- pacf (rma)
+
+
+rma.fit<- arima(log(rma),c(1,0,0))
+rma.fit
+
+
+forecast(rma.fit,8)
+plot(forecast(rma.fit,8))
+
+
+# ROK----------------------------------------------------------
+rok<- lumber.price [which(lumber.price$Species=="ROK"),]
+rok <- rok [c("Price")]
+rok<- ts(rok, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+summary(rok)
+plot.ts (rok)
+abline(reg=lm(rok~time(rok)))
+
+
+adf.test(diff(log(rok)),alternative = "stationary", k=0)
+acf.rok <- acf (rok) 
+pac.rok <- pacf (rok)
+
+
+rok.fit<- arima(log(rok),c(1,0,0))
+rok.fit
+
+
+forecast(rok.fit,8)
+plot(forecast(rok.fit,8))
+
+
+# WAL---------------------------------------------------------
+wal<- lumber.price [which(lumber.price$Species=="WAL"),]
+wal <- wal [c("Price")]
+wal<- ts(wal, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+summary(wal)
+plot.ts (wal)
+abline(reg=lm(wal~time(wal)))
+
+
+adf.test(diff(log(wal)),alternative = "stationary", k=0)
+acf.wal <- acf (wal) 
+pac.wal <- pacf (wal)
+
+
+wal.fit<- arima(log(wal),c(1,0,0))
+wal.fit
+
+
+forecast(wal.fit,8)
+plot(forecast(wal.fit,8))
+
+
+# WOK--------------------------------------------------------
+wok<- lumber.price [which(lumber.price$Species=="WOK"),]
+wok <- wok [c("Price")]
+wok<- ts(wok, frequency = 52, start=decimal_date(ymd("2016-06-30")))
+summary(wok)
+plot.ts (wok)
+abline(reg=lm(wok~time(wok)))
+
+
+adf.test(diff(log(wok)),alternative = "stationary", k=0)
+acf.wok <- acf (wok) 
+pac.wok <- pacf (wok)
+
+
+wok.fit<- arima(log(wok),c(1,0,0))
+wok.fit
+
+
+forecast(wok.fit,8)
+plot(forecast(wok.fit,8))
+exp(7.522)
+####################################################################################################
+Python
+import sys
+import os
+sys.path.append(os.path.abspath('//glc-file-01/Shared/users/BI Share/01_Shared_Data_Source'))
+from send_email import *
+import pandas as pd
+import sqlalchemy as db
+import urllib
+import datetime as dt
+
+
+# read data from MillTech database
+params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
+                                 "SERVER=glc-sql04;"
+                                 "DATABASE=ISISWood_Reports;"
+                                 "Trusted_Connection=yes")
+engine = db.create_engine("mssql+pyodbc:///?odbc_connect={}".format(params))
+engine_con = engine.connect()
+sql_result = engine_con.execute("Select Distinct ivh.ivhID, ivh.ivhDate From ISISWood_Reports.dbo.InvoiceHeader ivh "
+                           "Join ISISWood_Reports.dbo.DocumentCostMaster dcm On dcm.dcmDocID = ivh.ivhID "
+                           "Left Join ("
+                               "Select Distinct dcm.dcmDocID From ISISWood_Reports.dbo.InvoiceHeader ivh "
+                               "Join ISISWood_Reports.dbo.DocumentCostMaster dcm On dcm.dcmDocID = ivh.ivhID "
+                               "Left Join ISISWood_Reports.dbo.DocumentUserFields duf On duf.dufDocId = ivh.ivhID "
+                               "Where dcm.dcmDocType = 'Invoice' And duf.dufDocType = 'invoice' And duf.dufSeq = 9"
+                           ") As t On t.dcmDocID = dcm.dcmDocID "
+                           "Where t.dcmDocID Is Null")
+exception_data = pd.DataFrame(sql_result.fetchall())
+exception_data.columns = sql_result.keys()
+# print(exception_data)
+exception_data = exception_data[exception_data['ivhDate'] >= pd.Timestamp(2019,1,1)]
+print(exception_data.shape[0])
+# if exception happen, send email to Linda, Ziwei, Manish, and Renee
+if exception_data.shape[0] == 0:
+       result = 'no exception'
+else:
+       invoice_num = ', '.join([str(i) for i in list(exception_data.iloc[:,0])])
+       body = 'Hi Linda, \n\nHere is the list of invoice that we could not find carrier information in the invoice --> invoice user field in MillTech. ' \
+              '\nPlease let us know if you have any questions.\n' + 'Invoice No: ' +\
+              invoice_num +\
+              '\n\nThank you.'
+       result = 'exception sent ' + send_mail('gutchessreports@gutchess.com', ['LALuther@gutchess.com'],
+                                              'Invoice Without Carrier Information', body, 'mail.gutchess.com', 25, cc_addr=['rzhong@gutchess.com', 'zpi@gutchess.com']) + 'ed'
+print(result)
+
+
+# write the result to file
+f = open(r"\\glc-file-01\Shared\users\BI Share\Unclassified_Project_Exception_Report\InvoiceUserField_NoCarrierInfo\send_exception_result.csv",'w')
+f.write('title\n' + result)
+#####################################################################################################################
+SQL 
+
+
+ SELECT sph.sphID, sph.sphOrderID,duf.*
+  FROM [ISISWood_Reports].[dbo].[DocumentUserFields] as duf
+  inner join ISISWood_Reports.dbo.ShippingHeader as sph on sph.sphID = duf.dufDocId
+  where dufSeq = 9 and dufDocType = 'SHIPPING'
+#######################################################################
+SQL Purchase Open Order -----------------------------------------------
+
+
+DECLARE @POID varchar ='<All>'
+, @POStatus varchar ='<Open>'
+, @Loc varchar ='<All>'
+
+
+SELECT 'Open Orders Purchase - 40' AS Report, 'dsMainTable' AS Dataset
+, PH.pohID AS POID
+, (CASE Isnumeric(Substring(Isnull(PH.pohID,' '),DATALENGTH(Isnull(PH.pohID,' ')),1)) WHEN 0 THEN 'True' ELSE 'False' END) AS BackOrderFlag
+, (CASE Isnumeric(Substring(Isnull(PH.pohID,' '),DATALENGTH(Isnull(PH.pohID,' ')),1)) WHEN 0 THEN 'X' ELSE '' END) AS BackOrder
+, (CASE Isnumeric(Substring(Isnull(PH.pohID,' '),DATALENGTH(Isnull(PH.pohID,' ')),1)) WHEN 0 THEN Substring(Isnull(PH.pohID,' '),1,DATALENGTH(PH.pohID)-1) ELSE PH.pohID END) AS OriginalPO
+, PH.pohDate AS PODate, smID AS SuppID , ISNULL(SM.smID,'') AS Supplier
+
+
+, Isnull(PH.pohDateReq,'1/1/2099') AS FullReadyDate
+, Convert(VarChar,DatePart(MM,PH.pohDateReq)) + '/' + Convert(VarChar,DatePart(dd,PH.pohDateReq)) AS ReadyDate
+, Isnull(Convert(VarChar,DatePart(YYYY,U1.dufValue))+'/'+Convert(VarChar,DatePart(MM,U1.dufValue)) + '/' + Convert(VarChar,DatePart(dd,U1.dufValue)),'') AS POExpire
+
+
+, PM.prdSpeciesID AS SpecieID, pam1.pamDescrip AS SpecieDescrip
+, PM.prdThickID AS ThickID, pam2.pamDescrip AS ThickDescrip
+, PM.prdGradeID AS GradeID, pam3.pamDescrip AS GradeDescrip
+
+
+--- Current Tally
+, PD.podTally AS TLTally
+--- Current PO Truck Loads
+--, Convert(Real,Substring(PD.podTally,1,PatIndex('%/%',PD.podTally)-1)) AS POTruckLoads
+--- Original PO Tally
+, Isnull(RTL.RecLoads,0) AS OriginalPOTruckLoads
+--- Original PO Tally less latrest B/O Tally
+--, Isnull(RTL.RecLoads,0)-Convert(Real,Substring(PD.podTally,1,PatIndex('%/%',PD.podTally)-1)) AS RecTruckLoads
+, pohSalesmanID AS Purchaser
+, (CASE ISNULL(PD.podTally,'') WHEN '' THEN 'Wrong Record' ELSE '' END) AS TallyRecError
+, PD.podVolume AS POVolume, PD.podPurchVolume AS POPurchVol
+, PD.podSeq AS LineSeq
+, ISNULL(DS1.LineSeq,0) AS FASRef, ISNULL(DS1.POPrice,0) AS FAS
+, ISNULL(DS2.LineSeq,0) AS F1FRef, ISNULL(DS2.POPrice,0) AS F1F
+, ISNULL(DS3.LineSeq,0) AS SELRef, ISNULL(DS3.POPrice,0) AS SEL
+, ISNULL(DS7.LineSeq,0) AS SBRef, ISNULL(DS7.POPrice,0) AS SB
+, ISNULL(DS4.LineSeq,0) AS OneCRef, ISNULL(DS4.POPrice,0) AS OneC
+, ISNULL(DS5.LineSeq,0) AS TwoCRef, ISNULL(DS5.POPrice,0) AS TwoC
+, ISNULL(DS6.LineSeq,0) AS ThreeCRef, ISNULL(DS6.POPrice,0) AS ThreeC
+ FROM ISISWood_Reports.dbo.PurchaseDetail PD
+ INNER JOIN ISISWood_Reports.dbo.PurchaseHeader PH ON PH.pohID=PD.podID
+ LEFT JOIN ISISWood_Reports.dbo.SupplierMaster SM ON SM.smID=PH.pohSuppID
+ LEFT JOIN ISISWood_Reports.dbo.DocumentUserFields U1 ON U1.dufDocType='PURCHASE' AND U1.dufDocId=PH.pohID AND U1.dufSeq=1
+ INNER JOIN ISISWood_Reports.dbo.ProductMaster PM ON PM.prdID=PD.podProductID
+ LEFT JOIN ISISWood_Reports.dbo.productattributemaster pam1 ON pam1.pamDocType='Specie' AND pam1.pamDocId=PM.prdSpeciesID   
+ LEFT JOIN ISISWood_Reports.dbo.productattributemaster pam2 ON pam2.pamDocType='Thick' AND pam2.pamDocId=PM.prdThickId   
+ LEFT JOIN ISISWood_Reports.dbo.productattributemaster pam3 ON pam3.pamDocType='Grade' AND pam3.pamDocID=PM.prdGradeId   
+ inner JOIN (Select rh1.pohID AS POID, rd1.podProductID AS POProduct
+  , Convert(Real,Substring(rd1.podTally,1,PatIndex('%/%',rd1.podTally)-1)) AS RecLoads
+ From ISISWood_Reports.dbo.PurchaseDetail rd1
+  Inner Join ISISWood_Reports.dbo.PurchaseHeader rh1 ON rh1.pohID=rd1.podID
+   where  (CASE ISNULL(rd1.podTally,'') WHEN '' THEN 'N/A' ELSE rd1.podTally END)<>'N/A'
+    ) AS RTL ON RTL.POProduct=PM.prdID AND RTL.POID=
+  (CASE Isnumeric(Substring(PH.pohID,DATALENGTH(PH.pohID),1)) WHEN 0 THEN Substring(PH.pohID,1,DATALENGTH(PH.pohID)-1) ELSE PH.pohID END)
+ -- Price Sequence 1
+ --LEFT JOIN (select pd1.podid as POID, (pd1.podseq-1) as LineSeq, pd1.podPrice as POPrice, pm1.prdSpeciesID As Spc, pm1.prdThickID As Thk, pm1.prdGradeID As Grd
+ -- from purchasedetail pd1 inner join purchaseheader ph1 on ph1.pohid=pd1.podid inner join ProductMaster pm1 on pm1.prdID=pd1.podProductID
+ -- where (pd1.podid=@POID OR @POID='<All>')) AS DS1 ON DS1.POID=PD.PodID AND DS1.LineSeq=PD.podSeq And DS1.Spc=PM.prdSpeciesID And DS1.Thk=PM.prdThickID
+ LEFT JOIN (select pd1.podid as POID, (pd1.podseq-1) as LineSeq, pd1.podPrice as POPrice, pm1.prdSpeciesID As Spc, pm1.prdThickID As Thk, pm1.prdGradeID As Grd, g1.pamGroupID As GrdGroup
+  from ISISWood_Reports.dbo.purchasedetail pd1 inner join ISISWood_Reports.dbo.purchaseheader ph1 on ph1.pohid=pd1.podid inner join ISISWood_Reports.dbo.ProductMaster pm1 on pm1.prdID=pd1.podProductID 
+        inner join ISISWood_Reports.dbo.ProductAttributeMaster g1 on g1.pamDocType='grade' And g1.pamDocId=pm1.prdGradeID
+  where (pd1.podid=@POID OR @POID='<All>') And pd1.podPrice<>0 And g1.pamGroupID='FAS') AS DS1 ON DS1.POID=PD.PodID And DS1.Spc=PM.prdSpeciesID And DS1.Thk=PM.prdThickID --AND DS1.LineSeq=PD.podSeq
+ -- Price Sequence 2
+ LEFT JOIN (select pd2.podid as POID, (pd2.podseq-2) as LineSeq, pd2.podPrice as POPrice, pm2.prdSpeciesID As Spc, pm2.prdThickID As Thk, pm2.prdGradeID As Grd, g2.pamGroupID As GrdGroup
+  from ISISWood_Reports.dbo.purchasedetail pd2 inner join ISISWood_Reports.dbo.purchaseheader ph2 on ph2.pohid=pd2.podid inner join ISISWood_Reports.dbo.ProductMaster pm2 on pm2.prdID=pd2.podProductID
+        inner join ISISWood_Reports.dbo.ProductAttributeMaster g2 on g2.pamDocType='grade' And g2.pamDocId=pm2.prdGradeID
+  where (pd2.podid=@POID OR @POID='<All>') And pd2.podPrice<>0 And g2.pamGroupID='F1F') AS DS2 ON DS2.POID=PD.podID And DS2.Spc=PM.prdSpeciesID And DS2.Thk=PM.prdThickID --AND DS2.LineSeq=PD.podSeq
+ -- Price Sequence 3
+ LEFT JOIN (select pd3.podid as POID, (pd3.podseq-3) as LineSeq, pd3.podPrice as POPrice, pm3.prdSpeciesID As Spc, pm3.prdThickID As Thk, pm3.prdGradeID As Grd, g3.pamGroupID As GrdGroup
+  from ISISWood_Reports.dbo.purchasedetail pd3 inner join ISISWood_Reports.dbo.purchaseheader ph3 on ph3.pohid=pd3.podid inner join ISISWood_Reports.dbo.ProductMaster pm3 on pm3.prdID=pd3.podProductID
+        inner join ISISWood_Reports.dbo.ProductAttributeMaster g3 on g3.pamDocType='grade' And g3.pamDocId=pm3.prdGradeID
+  where (pd3.podid=@POID OR @POID='<All>') And pd3.podPrice<>0 And g3.pamGroupID='SEL' And pm3.prdGradeID='sel') AS DS3 ON DS3.POID=PD.PodID And DS3.Spc=PM.prdSpeciesID And DS3.Thk=PM.prdThickID --AND DS3.LineSeq=PD.podSeq
+ ---- Price Sequence 4
+ LEFT JOIN (select pd4.podid as POID, (pd4.podseq-4) as LineSeq, pd4.podPrice as POPrice, pm4.prdSpeciesID As Spc, pm4.prdThickID As Thk, pm4.prdGradeID As Grd, g4.pamGroupID As GrdGroup
+  from ISISWood_Reports.dbo.purchasedetail pd4 inner join ISISWood_Reports.dbo.purchaseheader ph4 on ph4.pohid=pd4.podid inner join ISISWood_Reports.dbo.ProductMaster pm4 on pm4.prdID=pd4.podProductID
+        inner join ISISWood_Reports.dbo.ProductAttributeMaster g4 on g4.pamDocType='grade' And g4.pamDocId=pm4.prdGradeID
+  where (pd4.podid=@POID OR @POID='<All>') And pd4.podPrice<>0 And g4.pamGroupID='1C') AS DS4 ON DS4.POID=PD.PodID And DS4.Spc=PM.prdSpeciesID And DS4.Thk=PM.prdThickID --AND DS4.GrdGroup=pam3.pamGroupID
+ -- Price Sequence 5
+ LEFT JOIN (select pd5.podid as POID, (pd5.podseq-5) as LineSeq, pd5.podPrice as POPrice, pm5.prdSpeciesID As Spc, pm5.prdThickID As Thk, pm5.prdGradeID As Grd, g5.pamGroupID As GrdGroup
+  from ISISWood_Reports.dbo.purchasedetail pd5 inner join ISISWood_Reports.dbo.purchaseheader ph5 on ph5.pohid=pd5.podid inner join ISISWood_Reports.dbo.ProductMaster pm5 on pm5.prdID=pd5.podProductID
+        inner join ISISWood_Reports.dbo.ProductAttributeMaster g5 on g5.pamDocType='grade' And g5.pamDocId=pm5.prdGradeID
+  where (pd5.podid=@POID OR @POID='<All>') And pd5.podPrice<>0 And g5.pamGroupID='2C') AS DS5 ON DS5.POID=PD.PodID And DS5.Spc=PM.prdSpeciesID And DS5.Thk=PM.prdThickID --AND DS5.LineSeq=PD.podSeq
+ -- Price Sequence 6
+ LEFT JOIN (select pd6.podid as POID, (pd6.podseq-6) as LineSeq, pd6.podPrice as POPrice, pm6.prdSpeciesID As Spc, pm6.prdThickID As Thk, pm6.prdGradeID As Grd, g6.pamGroupID As GrdGroup
+  from ISISWood_Reports.dbo.purchasedetail pd6 inner join ISISWood_Reports.dbo.purchaseheader ph6 on ph6.pohid=pd6.podid inner join ISISWood_Reports.dbo.ProductMaster pm6 on pm6.prdID=pd6.podProductID
+        inner join ISISWood_Reports.dbo.ProductAttributeMaster g6 on g6.pamDocType='grade' And g6.pamDocId=pm6.prdGradeID
+  where (pd6.podid=@POID OR @POID='<All>') And pd6.podPrice<>0 And g6.pamGroupID='3C') AS DS6 ON DS6.POID=PD.PodID And DS6.Spc=PM.prdSpeciesID And DS6.Thk=PM.prdThickID --AND DS6.LineSeq=PD.podSeq
+   
+ -- Price Sequence 7
+ LEFT JOIN (select pd7.podid as POID, (pd7.podseq-7) as LineSeq, pd7.podPrice as POPrice, pm7.prdSpeciesID As Spc, pm7.prdThickID As Thk, pm7.prdGradeID As Grd, g7.pamGroupID As GrdGroup
+  from ISISWood_Reports.dbo.purchasedetail pd7 inner join ISISWood_Reports.dbo.purchaseheader ph7 on ph7.pohid=pd7.podid inner join ISISWood_Reports.dbo.ProductMaster pm7 on pm7.prdID=pd7.podProductID
+        inner join ISISWood_Reports.dbo.ProductAttributeMaster g7 on g7.pamDocType='grade' And g7.pamDocId=pm7.prdGradeID
+  where (pd7.podid=@POID OR @POID='<All>') And pd7.podPrice<>0 And g7.pamGroupID='SEL' And pm7.prdGradeID Like 's&b%') AS DS7 ON DS7.POID=PD.PodID And DS7.Spc=PM.prdSpeciesID And DS7.Thk=PM.prdThickID --AND DS3.LineSeq=PD.podSeq
+
+
+   WHERE (CASE ISNULL(PD.podTally,'') WHEN '' THEN 'N/A' ELSE PD.podTally END)<>'N/A'
+##########################################################################################################################
+R Cants Info Extraction
+# install package and load library
+.libPaths('C:/Users/cwang/Documents/R_library')
+options(java.parameters = "- Xmx1024m")
+install.packages("stringr")
+install.packages("dplyr", lib = 'C:/Program Files/Alteryx/R-3.4.4/library')
+install.packages("rJava")
+install.packages("tidyr")
+install.packages("XLConnect")
+install.packages("plyr")
+library(XLConnect)
+library(stringr)
+library(dplyr)
+library(rJava)
+library(tidyr)
+library(plyr)
+#Cants<- data.frame((sheet_content[seperate_row[j]:(ifelse(is.na(seperate_row[j+1]),nrow(sheet_content),seperate_row[j+1]))-1,]))
+not_all_na <- function(x) any(!is.na(x))
+not_any_na <- function(x) all(!is.na(x))
+### year 2014----------------------------------------------------------------------------
+# read the workbook year 2014
+wb <- loadWorkbook("//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/GUTCHESS WORKSHEET 2014.xlsx")
+sheet_names <- getSheets(wb)
+
+
+CantsPrice <- data.frame()
+
+
+for(i in 1:(length(sheet_names)-1) ){
+  print(i,1)
+  # read each work sheets for every month ------------------------------------------------------------------------------
+  sheet_content <- readWorksheet(wb,sheet_names[i], header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'no.')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+
+
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+}
+
+
+write.Alteryx(CantsPrice, 1)
+
+
+
+
+### year 2015-------------------------------------------------------------------------------
+wb <- loadWorkbook("//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/GUTCHESS WORKSHEET 2015.xlsx")
+sheet_names <- getSheets(wb)
+
+
+CantsPrice <- data.frame()
+
+
+for(i in 1:(length(sheet_names)-2) ){
+  print(i,1)
+  # read each work sheets for every month  ------------------------------------------------------------------------------------------
+  sheet_content <- readWorksheet(wb,sheet_names[i], header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'load #')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+  
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+}
+
+
+write.Alteryx(PalletsPrice, 2)
+
+
+
+
+### year 2016-------------------------------------------------------------------------------
+wb <- loadWorkbook("//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/GUTCHESS WORKSHEET 2016.xlsx")
+sheet_names <- getSheets(wb)
+
+
+CantsPrice <- data.frame()
+
+
+for(i in 1:(length(sheet_names)-1) ){
+  print(i,1)
+  # read each work sheets for every month  ------------------------------------------------------------------------------------------
+  sheet_content <- readWorksheet(wb,sheet_names[i], header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'load #')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+  
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+}
+
+
+write.Alteryx(PalletsPrice, 3)
+
+
+### year 2017------------------------------------------------------------------------------- need to split the worksheets
+Cants2017 <- dir(path = "//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/2017", pattern = ".xlsx", full.names = T)
+
+
+filepath <- Cants2017
+CantsPrice <- data.frame()
+for (i in 1 : length(filepath)){
+  print(i,1)
+  wb <- loadWorkbook(as.character(filepath[i]), create=FALSE)
+  sheet_content <- readWorksheet(object = wb, 1,header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'load #')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+  
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+  
+}
+
+
+
+
+write.Alteryx(PalletsPrice, 4)
+
+
+### year 2018------------------------------------------------------------------------------- need to split sheets
+Cants2018 <- dir(path = "//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/2018", pattern = ".xlsx", full.names = T)
+
+
+filepath <- Cants2018
+CantsPrice <- data.frame()
+for (i in 1 : length(filepath)){
+  print(i,1)
+  wb <- loadWorkbook(as.character(filepath[i]), create=FALSE)
+  sheet_content <- readWorksheet(object = wb, 1,header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'load #')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+  
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+  
+}
+
+
+write.Alteryx(PalletsPrice, 5)
+
+
+### year 2014 others-------------------------------------------------------------------------------
+wb <- loadWorkbook("//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/OTHERS WORKSHEET 2014.xls")
+sheet_names <- getSheets(wb)
+
+
+CantsPrice <- data.frame()
+
+
+for(i in 1:(length(sheet_names)) ){
+  print(i,1)
+  # read each work sheets for every month  ------------------------------------------------------------------------------------------
+  sheet_content <- readWorksheet(wb,sheet_names[i], header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'company')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+  
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+}
+
+
+write.Alteryx(PalletsPrice, 1)
+
+
+
+
+### year 2015  others-------------------------------------------------------------------------------
+wb <- loadWorkbook("//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/OTHERS WORKSHEET 2015.xls")
+sheet_names <- getSheets(wb)
+
+
+CantsPrice <- data.frame()
+
+
+for(i in 1:(length(sheet_names)-4) ){
+  print(i,1)
+  # read each work sheets for every month  ------------------------------------------------------------------------------------------
+  sheet_content <- readWorksheet(wb,sheet_names[i], header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'company')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+  
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+}
+
+
+write.Alteryx(PalletsPrice, 2)
+
+
+### year 2016 others-------------------------------------------------------------------------------
+wb <- loadWorkbook("//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/OTHERS WORKSHEET 2016.xls")
+sheet_names <- getSheets(wb)
+
+
+CantsPrice <- data.frame()
+
+
+for(i in 1:(length(sheet_names)-2) ){
+  print(i,1)
+  # read each work sheets for every month  ------------------------------------------------------------------------------------------
+  sheet_content <- readWorksheet(wb,sheet_names[i], header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'company')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+  
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+}
+
+
+write.Alteryx(PalletsPrice, 3)
+
+
+
+
+### year 2017 others-------------------------------------------------------------------------------
+wb <- loadWorkbook("//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/OTHERS WORKSHEET 2017.xls")
+sheet_names <- getSheets(wb)
+
+
+CantsPrice <- data.frame()
+
+
+for(i in 1:(length(sheet_names)-2) ){
+  print(i,1)
+  # read each work sheets for every month  ------------------------------------------------------------------------------------------
+  sheet_content <- readWorksheet(wb,sheet_names[i], header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'company')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+  
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+}
+
+
+write.Alteryx(PalletsPrice, 4)
+
+
+### year 2018 others-------------------------------------------------------------------------------
+wb <- loadWorkbook("//glc-file-01/shared/USERS/CWang/A cunstomer revised/Cants/OTHERS WORKSHEET 2018.xls")
+sheet_names <- getSheets(wb)
+
+
+CantsPrice <- data.frame()
+
+
+for(i in 1:(length(sheet_names)-3) ){
+  print(i,1)
+  # read each work sheets for every month  ------------------------------------------------------------------------------------------
+  sheet_content <- readWorksheet(wb,sheet_names[i], header=FALSE)
+  Cants<- data.frame(sheet_content[which(str_detect(tolower(sheet_content[,1]), 'company')):nrow(sheet_content),])
+  removecolumn <- Cants %>% select_if(not_all_na)
+  CantsInfo<- removecolumn[!(apply(Cants, 1, function(x) all(is.na(x)))),]
+  
+  print(i,2)
+  
+  # data combination ----------------------------------------------------------------------------------------
+  CantsPrice <- rbind.fill(CantsPrice, CantsInfo)
+  
+}
+
+
+write.Alteryx(PalletsPrice, 5)
+
+
+#########################################################################################################################
+VBA Split Excel Sheets--------------------------------------------------------------
+Sub SaveSheets()
+    Dim strPath As String
+    Dim ws As Worksheet
+
+
+    Application.ScreenUpdating = False
+
+
+    strPath = ActiveWorkbook.Path & "\"
+    For Each ws In ThisWorkbook.Sheets
+        ws.Copy
+        'Use this line if you want to break any links:
+        BreakLinks Workbooks(Workbooks.Count)
+        Workbooks(Workbooks.Count).Close True, strPath & ws.Name & ".xlsx"
+    Next
+
+
+    Application.ScreenUpdating = True
+End Sub
+
+
+Sub BreakLinks(wb As Workbook)
+    Dim lnk As Variant
+    For Each lnk In wb.LinkSources(xlExcelLinks)
+        wb.BreakLink lnk, xlLinkTypeExcelLinks
+    Next
+End Sub
+
+
+To run the code, do the following:
+
+
+Open the VBA editor (Alt+F11)
+In the tree in the top left corner, right click on your workbook and insert a new module
+Copy the above code into this module
+Close the VBA editor
+In Excel press Alt+F8 to run macros and select SaveSheets
+
+
+#####################################################################################################################
+
+
+install.packages("pdftools")
+install.packages("Xlsx")
+install.packages("stringr'")
+install.packages("dplyr")
+install.packages("tidyverse")
+
+
+library(dplyr)
+library(pdftools)
+library(xlsx)
+library(stringr)
+library (tidyverse)
+
+
+filePath.damage <- '//glc-file-01/shared/users/CWang/Exception Reports/DamageReport changed.pdf'
+contentText.damage <- pdf_text(filePath.damage)
+content.damage <- strsplit(contentText.damage, '\n')
+content.damage
+########################################################################
+
+
+tx <- pdf_text("//glc-file-01/shared/users/CWang/Exception Reports/DamageReport changed.pdf") %>% strsplit(split = "\n")
+tx2 <- unlist(str_split(tx, "[\\r\\n]+"))
+tx3 <- str_split_fixed(str_trim(tx2), "\\s{2,}", 5)
+write.xlsx(tx3, file="ds.xlsx")
+
+
+
+
+
+
+#########################################################################
+filePath.coaching <- '//glc-file-01/shared/users/CWang/Exception Reports/Coaching Discussion Complete.pdf'
+contentText.coaching <- pdf_text(filePath.coaching)
+content.coaching <- strsplit(contentText.coaching, '\n')
+content.coaching
+
+
+filePath.exception <- '//glc-file-01/shared/users/CWang/Exception Reports/Exception Report completed.pdf'
+contentText.exception <- pdf_text(filePath.exception)
+content.exception <- strsplit(contentText.exception, '\n')
+content.exception
+
+
+filePath.machine <- '//glc-file-01/shared/users/CWang/Exception Reports/machine Down Time Report Completed.pdf'
+contentText.machine <- pdf_text(filePath.machine)
+content.machine <- strsplit(contentText.machine, '\n')
+content.machine
+
+
+filePath.notice <- '//glc-file-01/shared/users/CWang/Exception Reports/Notice of Official Warning completed.pdf'
+contentText.notice <- pdf_text(filePath.notice)
+content.notice <- strsplit(contentText.notice, '\n')
+content.notice
+
+
+filePath.verbal <- '//glc-file-01/shared/users/CWang/Exception Reports/Verbal Discussion. completedpdf.pdf'
+contentText.verbal <- pdf_text(filePath.verbal)
+content.verbal <- strsplit(contentText.verbal, '\n')
+content.verbal
+
+
+#####################################################################################
+PDF Data Extraction------------------------------------
+# load pdf file Mill Downtime
+filePath.downtime <- '//glc-file-01/shared/users/CWang/Exception Reports/machine Down Time Report Completed.pdf'
+contentText.downtime <- pdf_text(filePath.downtime) %>%
+  readr::read_lines()
+content.downtime <- strsplit(contentText.downtime, '\n')
+content.downtime
+
+
+MillDowntime <- contentText.downtime[3:18]
+MillDowntime
+# use functions in the stringr package to manipulate the lines of text into a desireble form
+all_stats_lines <- MillDowntime[1:16] %>%
+  str_squish() %>%   # tackle whitespace
+  str_replace_all ("_","") %>%
+  strsplit(split=" ")  # split the elements of each string into substrings
+all_stats_lines
+
+
+# extract informations
+Area <- all_stats_lines[1] %>%
+  unlist()
+Area <- Area[1]
+Area
+
+
+LostOp <- all_stats_lines[13] %>%
+  unlist()
+LostOp  <- LostOp [1:2]
+LostOp
+
+
+Labor_cost <- all_stats_lines[16] %>%
+  unlist()
+Labor_cost
+
+
+Downtime <- all_stats_lines[10] %>%
+  unlist()
+Downtime <- Downtime[1]
+Downtime 
+
+
+write.xlsx(Downtime, file="GLC Incident Tracking 2018",sheetName = "Mill Downtime 2018",
+           col.names = TRUE, row.names = TRUE, append= TRUE) # write data from r to excel files
+
+
+############################################################################################################
+from ayx import Alteryx
+from ayx import Package
+import pandas as pd
+import pgeocode
+data = Alteryx.read("#1")
+data = data['Zipcode','CountryCode']
+for index, item in data.iterrows():
+    nomi = pgeocode.Nominatim(item.CountryCode.lower())
+    postal_code = item.Zipcode
+    location = nomi.query_postal_code(postal_code)
+
+
+alteryx.write(location, 1)
+
+
+
+
+#################################################################
+select 
+        s.userID as "UserID"
+        ,Auditlog.*
+    ,cast(JSON_VALUE(s.data, '$.activated')as date) as "LastActivatedAt"
+        ,JSON_VALUE(s.data, '$.promoCode') as "PromoCode"
+        ,JSON_VALUE(s.data, '$.active') as "isCurrentActive"
+        ,cast(JSON_VALUE(s.data, '$.created') as date) as "CreatedAt"
+        ,cast(JSON_VALUE(s.data, '$.cancelled') as date) as "LastCancelledAt"
+    ,JSON_VALUE(s.data, '$.braintreeID') as "CurrentBraintreeID"
+        ,JSON_VALUE(s.data, '$.isPayingSubscriber') as "isPayingSubscriber"
+        ,JSON_VALUE(s.data, '$.isZombie') as "isZombie"
+        ,JSON_VALUE(s.data, '$.lastReconcile') as "LastReconcile"
+        ,JSON_VALUE(s.data, '$.braintreeStatus') as "BraintreeStatus"
+        ,JSON_VALUE(s.data, '$.paymentToken') as "PaymentToken"
+        ,BT.*  
+from [csidb].[csi].[Subscription] as s                                                                  /* subscription most recent record*/ 
+full outer join                                                                                         /* since the three subscription tables are created at different time i use full outer join here to include all the records*/
+    (
+        select 
+            a.id as AuditID
+        ,JSON_VALUE(a.previousContent, '$.subID') as "SubscriptionID"
+        ,JSON_VALUE(a.previousContent, '$.previousSubscriptionData.braintreeID') as "BraintreeID"
+        ,JSON_VALUE(a.previousContent, '$.previousSubscriptionData.userID') as "UserID"
+        ,cast(JSON_VALUE(a.previousContent, '$.previousSubscriptionData.lastRenewal')as date) as "ActivatedAt"
+        ,case when JSON_VALUE(a.previousContent, '$.previousSubscriptionData.cancelled')>=JSON_VALUE(a.previousContent, '$.previousSubscriptionData.activated')           /* remove the cancel date when subscriber rejoin and active now*/
+                  then cast(JSON_VALUE(a.previousContent, '$.previousSubscriptionData.cancelled') as date)
+                      else null
+            end as "CancelledAt"
+            ,JSON_VALUE(previousContent, '$.newStatus') as "Status"
+                ,JSON_VALUE(previousContent, '$.previousSubscriptionData.data.kickback') as "Kickback"
+            ,JSON_VALUE(previousContent, '$.previousSubscriptionData.data.kickbackPriceThreshold') as "KickbackPriceThreshold"
+            ,JSON_VALUE(previousContent, '$.previousSubscriptionData.data.price') as "Price"
+            ,JSON_VALUE(previousContent, '$.previousSubscriptionData.data.lastKickbackPercentage') as "LastKickbackPercentage"
+
+
+    from [csidb].[csi].[AuditLog] as a
+            join                                                                 
+          (select
+    JSON_VALUE(previousContent, '$.previousSubscriptionData.braintreeID') as "BraintreeID"
+              ,max(id) as max_id
+          from 
+              [csidb].[csi].[AuditLog]
+          group by 
+              JSON_VALUE(previousContent, '$.previousSubscriptionData.braintreeID')) as suba
+          on 
+              JSON_VALUE(a.previousContent, '$.previousSubscriptionData.braintreeID')=suba.BraintreeID 
+              and a.id=suba.max_id
+
+
+          WHERE
+    a.id > 16208 and JSON_VALUE(a.previousContent, '$.previousSubscriptionData.braintreeID') <>' ' )  as Auditlog                                                   
+on s.userID= Auditlog.UserID 
+full outer join 
+    (
+    select                                                                                                 
+        bt.id as WebhookID
+            ,JSON_VALUE(bt.data, '$.subscriptionID') as Braintree_ID
+            ,JSON_VALUE(bt.data, '$.userID') as User_ID
+        ,JSON_VALUE(bt.data, '$.subscriptionStatus') as Subscription_Status
+            ,JSON_VALUE(bt.data, '$.kind') as Kind
+            ,JSON_VALUE(bt.data, '$.daysPastDue') as PastDue_Days
+            ,JSON_VALUE(bt.data, '$.balance') as Balance
+            ,JSON_VALUE(bt.data, '$.failureCount') as Failure_Count
+            ,cast(JSON_VALUE(bt.data, '$.firstBillingDate')as date) as First_Billing_Date
+            ,cast(JSON_VALUE(bt.data, '$.nextBillingDate') as date) as Next_Billing_Date
+            ,JSON_VALUE(bt.data, '$.nextBillingPeriodAmount') as Next_Billing_Amount
+            ,cast(JSON_VALUE(bt.data, '$.paidThroughDate') as date) as Paid_Through_Date
+        ,JSON_VALUE(bt.data, '$.price') as Price
+            ,cast(JSON_VALUE(bt.data, '$.billingPeriodStartDate')as date) as Billing_StartDate
+            ,cast(JSON_VALUE(bt.data, '$.billingPeriodEndDate') as date) as Billing_EndDate
+            ,JSON_VALUE(bt.data, '$.email') as Email
+            ,JSON_VALUE(bt.data, '$.paymentStatus') as Payment_Status
+            ,JSON_VALUE(bt.data, '$.paymentToken') as Payment_Token
+            ,JSON_VALUE(bt.data, '$.processorResponseText') as Processor_Response_Text
+            ,JSON_VALUE(bt.data, '$.processorResponseType') as Processor_Response_Type
+            ,JSON_VALUE(bt.data, '$.numberOfTransactions') as Number_Of_Transactions
+            ,JSON_VALUE(bt.data, '$.numberOfAddOns') as Number_Of_AddOns
+            ,JSON_VALUE(bt.data, '$.numberOfDiscounts') as Number_Of_Discounts
+            ,JSON_VALUE(bt.data, '$.isPaymentValid') as If_Payment_Valid
+            ,JSON_VALUE(bt.data, '$.zombie') as If_Zombie
+        from 
+        [csidb].[csi].[WebhookLog] as bt                                                         /*Braintree Subscription Data*/
+            join                                                                 
+          (select 
+              JSON_VALUE(data, '$.userID') as UserID
+              ,JSON_VALUE(data, '$.subscriptionID') as SubID
+              ,max(id) as max_id
+          from 
+              [csidb].[csi].[WebhookLog] as w
+          group by 
+              JSON_VALUE(data, '$.userID')
+              ,JSON_VALUE(data, '$.subscriptionID')) as sub
+          on 
+              JSON_VALUE(bt.data, '$.subscriptionID')=sub.SubID 
+              and JSON_VALUE(bt.data, '$.userID')=sub.UserID 
+              and bt.id=sub.max_id
+          ) as BT
+          on s.userID = BT.User_ID and BT.Braintree_ID= (case when Auditlog.AuditID is null then JSON_VALUE(s.data, '$.braintreeID') else Auditlog.BraintreeID end) 
+WHERE
+         s.userID is not null 
+         order by s.userID
